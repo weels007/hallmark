@@ -3,13 +3,13 @@
 > Work verified by consensus, paid on outcome, with portable reputation.
 
 **Live (GenLayer studionet):** `0xfe57D304623471A6aB8db137d73D2766b610eEA5`
-· [Studio Explorer](https://explorer-studio.genlayer.com) · [Protocol](./frontend/how.html) · [App](./frontend/app.html)
+· [GitHub](https://github.com/weels007/hallmark) · [Studio Explorer](https://explorer-studio.genlayer.com) · Protocol & App: `frontend/how.html`, `frontend/app.html` (atau `npm run dev`)
 
 | | |
 |---|---|
 | Contract | `contracts/future_work_bounty.py` (GenLayer intelligent contract) |
 | Frontend | `frontend/` — landing, protocol, bounty workbench (Vite + `genlayer-js`) |
-| Tests | `scripts/test-adversarial.ps1` — **13/13 PASS**, 0 SKIP (funded + fixture) |
+| Tests | `scripts/test-adversarial.ps1` — **13/13 PASS** (dengan dana + fixture; default 11 PASS + 2 SKIP) |
 | E2E | Post → submit PR #218 → resolve `medium`/50 → finalize `paid`, passport `contributor` |
 
 ## How it works
@@ -44,6 +44,7 @@ npm run build                               # output dist/
 
 - `/` landing · `/how.html` protokol + fund-safety · `/app.html` ledger, post/submit/resolve, passport, my-submissions.
 - Tiap write menunggu receipt `FINALIZED` per hash; panel hasil baca-balik `get_submission` + `get_bounty` dari chain + deep-link `explorer-studio.genlayer.com/tx/{hash}`.
+- Deploy (Vercel): import repo → setting default, `vercel.json` sudah mengatur build `frontend/` → `frontend/dist`.
 
 ## Batasan jujur
 
@@ -52,3 +53,4 @@ npm run build                               # output dist/
 - Resolve permissionless demi liveness; self-deal diblokir di kontrak.
 - Sengketa asimetris by design: hanya poster bisa veto; hunter resubmit pasca-veto. Veto membuka ulang bounty (bukan merampas dana), dan finalisasi permissionless pasca-jendela menyeimbangkan.
 - `genlayer call` (CLI) tidak men-decode UserError view ke teks — guard terbukti via payload base64 di receipt (terdokumentasi di `DEPLOYMENTS.md`).
+- CLI membuang arg string kosong (calldata kekurangan arg → `TypeError` konsensus, tanpa perubahan state) dan memaksa `' '` menjadi `0` — guard `pr_number` positif-numerik di kontrak menutup celahnya dari client mana pun.
