@@ -15,6 +15,7 @@
 
 <p align="center">
   <a href="https://github.com/weels007/hallmark"><b>GitHub</b></a> ·
+  <a href="https://hallmark-ai.vercel.app/"><b>🚀 Live demo</b></a> ·
   <a href="https://explorer-studio.genlayer.com">Studio Explorer</a> ·
   <a href="./DEPLOYMENTS.md">Deployments</a> ·
   <a href="./frontend/how.html">Protocol</a>
