@@ -1,7 +1,7 @@
 # Adversarial tests for FutureOfWorkBounty (studionet)
 # Wallet: cpe-deploy (poster). Contract set via $C or first arg.
 # Usage: ./test-adversarial.ps1 [contractAddress] [-UnmergedPR <open-pr-number>]
-param([string]$C = "0xfe57D304623471A6aB8db137d73D2766b610eEA5", [string]$UnmergedPR = "")
+param([string]$C = "0x595B17f0b0D28aBb0f9ab9818a9FE7dF7b3EF9Fd", [string]$UnmergedPR = "")
 
 # Pin identity: sections 1-6 + sweep run as cpe-deploy (owner/poster); section 7
 # temporarily switches to cpe-v2 (hunter) and back. Never rely on ambient account.

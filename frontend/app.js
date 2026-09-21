@@ -1,7 +1,7 @@
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 
-const CONTRACT = "0xfe57D304623471A6aB8db137d73D2766b610eEA5";
+const CONTRACT = "0x595B17f0b0D28aBb0f9ab9818a9FE7dF7b3EF9Fd";
 const $ = (s) => document.querySelector(s);
 const ledger = $("#ledger"), card = $("#passportCard"), hint = $("#txHint"), resultBox = $("#txResult");
 
@@ -72,12 +72,12 @@ function explorerLink(hash) {
 
 function baseResultHtml(fn, hash, receipt) {
   const exec = esc(receipt.txExecutionResultName || "unknown");
-  return `<h4>✓ ${esc(fn)} — FINALIZED</h4>
+  return `<h4>✓ ${esc(fn)} — ACCEPTED</h4>
     <dl>
       ${txRow("tx hash", explorerLink(hash))}
       ${txRow("execution", exec)}
     </dl>
-    <p class="note">Verify in GenLayer Studio Explorer (link above opens the exact transaction). No local cache involved: the ledger below re-reads from chain.</p>`;
+    <p class="note">Verify in GenLayer Studio Explorer (link above opens the exact transaction; FINALIZED follows there). No local cache involved: the ledger below re-reads from chain.</p>`;
 }
 
 async function showResolveResult(sid, hash, receipt) {
@@ -89,7 +89,7 @@ async function showResolveResult(sid, hash, receipt) {
     const cd = b.challenge_deadline && b.challenge_deadline !== "0"
       ? new Date(Number(b.challenge_deadline) * 1000).toISOString()
       : "—";
-    body = `<h4>✓ resolve_submission #${esc(sid)} — FINALIZED</h4>
+    body = `<h4>✓ resolve_submission #${esc(sid)} — ACCEPTED</h4>
       <dl>
         ${txRow("tx hash", explorerLink(hash))}
         ${txRow("severity (consensus)", esc(s.severity))}
@@ -135,17 +135,19 @@ async function writeConfirmed(fn, args = [], btn) {
       args,
       value: BigInt(0),
     });
-    setHint(`Pending ${fn} → ${hash} (waiting for FINALIZED…)`);
+    setHint(`Pending ${fn} → ${hash} (waiting for ACCEPTED by consensus…)`);
     scrollToHint();
     let receipt;
     try {
-      receipt = await readClient.waitForTransactionReceipt({ hash, status: "FINALIZED", interval: 5000, retries: 120 });
+      // ACCEPTED = consensus agreed and state is readable. FINALIZED follows
+      // later in the explorer; waiting for it stalls the demo on studionet.
+      receipt = await readClient.waitForTransactionReceipt({ hash, status: "ACCEPTED", interval: 5000, retries: 120 });
     } catch (e) {
-      throw new Error(`Timed out waiting for FINALIZED (10 min). Track ${hash} in the explorer: ${EXPLORER}/tx/${hash}`);
+      throw new Error(`Timed out waiting for ACCEPTED (10 min). Track ${hash} in the explorer: ${EXPLORER}/tx/${hash}`);
     }
     if (receipt.txExecutionResultName === "FINISHED_WITH_ERROR")
       throw new Error(executionError(receipt));
-    setHint(`Confirmed ${fn} → ${hash}`, "ok");
+    setHint(`Accepted ${fn} → ${hash} (FINALIZED follows in explorer)`, "ok");
     return { hash, receipt };
   } catch (e) {
     setHint(`${fn} failed: ${e.message}`, "err");
@@ -199,8 +201,7 @@ async function mySubs() {
   const box = $("#mySubs");
   try {
     if (!connectedAddr) { box.innerHTML = `<p class="empty">Connect a wallet to see your claims.</p>`; return; }
-    box.innerHTML = `<p class="empty">Reading your submissions…</p>`;
-    const list = await read("list_submissions", [connectedAddr]);
+    box.innerHTML = `<p class="empty">Reading your submissions…</p>`;    const list = await read("list_submissions", [connectedAddr]);
     box.innerHTML = "";
     if (!list || !list.length) box.innerHTML = `<p class="empty">No submissions yet — link a PR above.</p>`;
     for (const s of list) {

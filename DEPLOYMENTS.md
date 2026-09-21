@@ -2,7 +2,7 @@
 
 - Wallet dipakai: `cpe-deploy` (0xD0B8fFA6ea2572D2a8F16512CAbB21eCFe6ea48b) — cocok dengan `wallet/cpe-deploy.json`
 - Hunter uji: `cpe-v2` (0x689759bb926e032eafb1ee986ed7a98c1496ec1c) — cocok `wallet/cpe-v2.json`
-- Kontrak aktif: 0xfe57D304623471A6aB8db137d73D2766b610eEA5 (deploy SUCCESS 20 Sep 2026, MAJORITY_AGREE; view-guard + pr_number hardening + challenge window/finalize, SHA wajib, koersi ID)
+- Kontrak aktif: 0x595B17f0b0D28aBb0f9ab9818a9FE7dF7b3EF9Fd (deploy SUCCESS 20 Sep 2026, MAJORITY_AGREE; view-guard + pr_number hardening + challenge window/finalize, SHA wajib, koersi ID)
 - Kontrak lama (jangan dipakai): 0x3cA04311cbC3bedBd28615c81cb61482A865A4cA (view-guard tanpa pr-hardening; 13/13 adversarial + E2E medium/50 arsip di bawah), 0x78b6123d7e5A7eb7Ce7FB69474F77bfF52C5c3Cd (pra-view-guard; happy-path + sengketa 14 Sep 2026 tetap valid sebagai arsip)
 - Kontrak lama (jangan dipakai): 0x78b6123d7e5A7eb7Ce7FB69474F77bfF52C5c3Cd (pra-view-guard; happy-path + sengketa 14 Sep 2026 tetap valid sebagai arsip), 0xEab1d20766fF720d0afcb9d91b9f2380484C15df (gagal: dataclass), 0x4eBbf266F43879e89851580A72e9de270A0252Ef (wajib msg.value), 0x4f80D863F313b62a7a0DcEfb94d3DF7987ec1Ea6 (pra-batch-A), 0xa83B6bF7b4784023f3F3630B56Ed6B168e230056 (crash ID int), 0xda8F7B3A15053730FD9EC078886B7E810A4c5A5D (resolve langsung bayar, tanpa sengketa)
 
@@ -51,9 +51,9 @@
 - Adversarial: 13/13 PASS, 0 SKIP (dengan dana + fixture `-UnmergedPR 11245`, PR open octocat/Hello-World) — termasuk `unmerged-resolve` → `[EXPECTED] PR not merged yet`, `sweep-guard`, dan 2 view-guard via payload base64. Catatan: sweep-guard kini pin akun cpe-deploy + jalan TERAKHIR agar tidak menguras dana probe.
 - E2E: post_bounty bid 3 (cpe-v2, genlayer-js, tiers 10/50/150/500) → submit_work sid 1 (cpe-deploy, PR 218) → resolve konsensus MAJORITY_AGREE 3/3: medium, payout 50, SHA 8c899cc… (konsisten dengan build lama) → finalize dini oleh poster → bounty paid, passport cpe-deploy contributor/earned 50.
 - Batch-2 manual (kontrak ini): double-finalize → `Already settled`, challenge-accepted → `Only pending…`, cancel-paid → `Cannot cancel`, submit-paid → `Bounty not open`, refund-tanpa-deadline → `No deadline set`, cancel non-poster → `Only poster`, self-hunt → `poster cannot hunt`, bad-repo → `repo must be`, owner-cancel bid 0 → SUCCESS + refund.
-- Temuan batch-2: CLI membuang arg string kosong (calldata 2 arg → TypeError konsensus, tanpa perubahan state) dan memaksa `' '`→`0` lolos sebagai pr_number — kontrak diperketat: `pr_number` harus positif-numerik, lalu redeploy ke 0xfe57…eEA5.
+- Temuan batch-2: CLI membuang arg string kosong (calldata 2 arg → TypeError konsensus, tanpa perubahan state) dan memaksa `' '`→`0` lolos sebagai pr_number — kontrak diperketat: `pr_number` harus positif-numerik, lalu redeploy ke 0x595B…EF9Fd.
 
-## Kontrak final 0xfe57…eEA5 (20 Sep 2026, E2E OK)
+## Kontrak final 0x595B…EF9Fd (20 Sep 2026, E2E OK)
 - Deploy: tx `0x9be96921686463946819d5c75bd4df3003ae882749a44fbc292009bdef531ebc`, MAJORITY_AGREE. Fund cpe-v2 2500 wei.
 - Malformed submit: `pr 0` + `pr abc` → `[EXPECTED] pr_number must be a positive PR number`.
 - Adversarial: 13/13 PASS, 0 SKIP (dengan `-UnmergedPR 11245`).

@@ -143,6 +143,13 @@ class FutureOfWorkBounty(gl.Contract):
     def post_bounty(
         self, repo: str, title: str, description: str, low_amt: u256, med_amt: u256, high_amt: u256, crit_amt: u256, deadline: u256
     ) -> str:
+        # Harden input types: SDK/CLI clients may deliver u256 params as str.
+        # Coerce once so storage setters never see a raw str (AttributeError).
+        low_amt = u256(int(low_amt))
+        med_amt = u256(int(med_amt))
+        high_amt = u256(int(high_amt))
+        crit_amt = u256(int(crit_amt))
+        deadline = u256(int(deadline))
         if len(repo.strip()) == 0 or "/" not in repo:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} repo must be 'org/name'")
         if len(title.strip()) == 0:

@@ -27,7 +27,7 @@
 
 | | |
 |---|---|
-| 💰 Live contract (studionet) | `0xfe57D304623471A6aB8db137d73D2766b610eEA5` |
+| 💰 Live contract (studionet) | `0x595B17f0b0D28aBb0f9ab9818a9FE7dF7b3EF9Fd` |
 | 📜 Source | [`contracts/future_work_bounty.py`](./contracts/future_work_bounty.py) |
 | 🖥️ Frontend | [`frontend/`](./frontend) — landing · protocol · bounty workbench (Vite + `genlayer-js`) |
 | 🧪 Adversarial | [`scripts/test-adversarial.ps1`](./scripts/test-adversarial.ps1) — **13/13 PASS** (dana + fixture; default 11 PASS + 2 SKIP) |
@@ -75,7 +75,7 @@ Studionet, 20 Sep 2026, wallet `cpe-deploy`/`cpe-v2`:
 
 | Alamat | Status |
 |--------|--------|
-| `0xfe57…eEA5` | ✅ aktif — view-guard + pr-hardening |
+| `0x595B…EF9Fd` | ✅ aktif — view-guard + pr-hardening |
 | `0x3cA0…A4cA` | arsip — view-guard, 13/13 + E2E medium/50 |
 | `0x78b6…5c3Cd` | arsip — happy-path + sengketa 14 Sep 2026 |
 | `0xda8F…4C5A5D` dkk | arsip eksperimen awal |
