@@ -125,8 +125,11 @@ async function writeConfirmed(fn, args = [], btn) {
   hideResult();
   const label = btn ? btn.textContent : "";
   if (btn) { btn.disabled = true; btn.textContent = "Working…"; }
+  let hash = "";
   try {
-    const hash = await writeClient.writeContract({
+    setHint(`Waiting for wallet signature — confirm "${fn}" in MetaMask (check the extension popup, it may open behind this window)…`);
+    scrollToHint();
+    hash = await writeClient.writeContract({
       address: CONTRACT,
       functionName: fn,
       args,
@@ -134,10 +137,12 @@ async function writeConfirmed(fn, args = [], btn) {
     });
     setHint(`Pending ${fn} → ${hash} (waiting for FINALIZED…)`);
     scrollToHint();
-    const receipt = await readClient.waitForTransactionReceipt({
-      hash,
-      status: "FINALIZED",
-    });
+    let receipt;
+    try {
+      receipt = await readClient.waitForTransactionReceipt({ hash, status: "FINALIZED", interval: 5000, retries: 120 });
+    } catch (e) {
+      throw new Error(`Timed out waiting for FINALIZED (10 min). Track ${hash} in the explorer: ${EXPLORER}/tx/${hash}`);
+    }
     if (receipt.txExecutionResultName === "FINISHED_WITH_ERROR")
       throw new Error(executionError(receipt));
     setHint(`Confirmed ${fn} → ${hash}`, "ok");
