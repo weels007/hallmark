@@ -93,6 +93,8 @@ input,textarea{font-family:var(--body);font-size:.92rem;padding:.6rem .7rem;bord
 #txHint{word-break:break-all}
 #txHint.ok{color:#7ddfa4;opacity:.95}
 #txHint.err{color:#f09286;opacity:.95}
+#debugBar{position:fixed;left:0;right:0;bottom:0;z-index:99;background:#000;color:#7ddfa4;font-family:var(--mono);font-size:.75rem;padding:.5rem .8rem;word-break:break-all;border-top:1px solid var(--gold)}
+#debugBar[hidden]{display:none}
 .result{margin-top:.8rem;font-size:.85rem;border:1px solid var(--line);border-radius:10px;padding:.9rem 1rem;background:#fffdf4;color:var(--ink);display:grid;gap:.45rem}
 .result[hidden]{display:none}
 .result h4{margin:0;font-family:var(--display);font-size:1.05rem}

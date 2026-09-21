@@ -313,3 +313,21 @@ $("#sweepBtn").onclick = async (e) => {
 
 refresh();
 window.__hallmarkReady = true;
+
+// Debug mode (?debug=1): fixed bar showing click + wallet + script state.
+// Invisible in normal use. Used to diagnose "button does nothing" reports.
+try {
+  if (new URLSearchParams(location.search).has("debug")) {
+    const bar = $("#debugBar");
+    bar.hidden = false;
+    const state = () => `ready=${!!window.__hallmarkReady} ethereum=${!!window.ethereum} connected=${connectedAddr || "-"} url=${location.href}`;
+    bar.textContent = "DEBUG " + state();
+    document.addEventListener("click", (ev) => {
+      const t = ev.target.closest("button,form,input,a");
+      bar.textContent = `CLICK tag=${ev.target.tagName} id=${t && t.id ? t.id : "-"} type=${t && t.type ? t.type : "-"} disabled=${t && !!t.disabled} | ` + state();
+    }, true);
+    document.addEventListener("submit", (ev) => {
+      bar.textContent = `SUBMIT form=${ev.target.id || "-"} | ` + state();
+    }, true);
+  }
+} catch { /* debug only, never break the app */ }
