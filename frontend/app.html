@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bounty app — Hallmark · Future of Work</title>
+<meta name="description" content="Post bounties, submit PRs, resolve by consensus, inspect passports." />
+<link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+<meta name="theme-color" content="#0e1420" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="./index.html">
+      <span class="brand-seal" aria-hidden="true">H</span>
+      <span class="brand-word">Hallmark<small>Future of Work · GenLayer</small></span>
+    </a>
+    <nav class="nav-links">
+      <a href="./index.html">Landing</a>
+      <a href="./how.html">How it works</a>
+      <a href="./app.html" class="active">Bounty app</a>
+    </nav>
+    <div class="nav-cta">
+      <span class="net-dot" id="netDot" title="studionet"></span>
+      <code class="contract" id="contractAddr" title="Kontrak aktif">0xfe57…eEA5</code>
+      <button class="btn ghost" id="connectBtn">Connect</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="page-head">
+    <p class="eyebrow">The workbench</p>
+    <h1>Bounties, submissions, <em>passports</em>.</h1>
+    <p class="lede">Everything below reads and writes the live contract on studionet. Connect a wallet to post or resolve.</p>
+  </section>
+
+  <section class="board" id="board">
+    <div class="section-head">
+      <div><p class="eyebrow">The ledger</p><h2>Open bounties</h2></div>
+      <button class="btn ghost" id="refreshBtn">Refresh ledger</button>
+    </div>
+    <div class="ledger" id="ledger"><p class="empty">Connecting to studionet…</p></div>
+  </section>
+
+  <section class="act" id="act">
+    <div class="panel">
+      <p class="eyebrow">Post a bounty</p>
+      <h2>Describe the defect, stake the outcome</h2>
+      <form id="postForm">
+        <label>Repository <input name="repo" placeholder="octocat/Hello-World" required /></label>
+        <label>Title <input name="title" placeholder="Fix auth bypass on reset flow" required /></label>
+        <label>Brief <textarea name="description" rows="3" placeholder="Repro steps, impact, links…"></textarea></label>
+        <div class="tiers">
+          <label>Low <input name="low" type="number" value="10" min="1" /></label>
+          <label>Medium <input name="med" type="number" value="50" min="1" /></label>
+          <label>High <input name="high" type="number" value="150" min="1" /></label>
+          <label>Critical <input name="crit" type="number" value="500" min="1" /></label>
+        </div>
+        <label>Deadline (optional) <input name="deadline" type="datetime-local" /></label>
+        <p class="hint">Fund the contract first from Studio faucet, then post — this page uses pre-funded escrow until the JS SDK exposes payable value.</p>
+        <button class="btn solid" type="submit">Seal the bounty</button>
+      </form>
+    </div>
+    <div class="panel">
+      <p class="eyebrow">Submit &amp; resolve</p>
+      <h2>Link work, trigger consensus</h2>
+      <form id="submitForm">
+        <label>Bounty id <input name="bounty_id" placeholder="0" required /></label>
+        <label>PR number <input name="pr" placeholder="42" required /></label>
+        <label>Notes <input name="notes" placeholder="What changed, test evidence" /></label>
+        <button class="btn line" type="submit">Submit work</button>
+      </form>
+      <form id="resolveForm">
+        <label>Submission id <input name="submission_id" placeholder="0" required /></label>
+        <button class="btn solid" type="submit">Resolve by consensus</button>
+      </form>
+      <form id="finalizeForm">
+        <label>Submission id <input name="submission_id" placeholder="0" required /></label>
+        <button class="btn line" type="submit">Finalize (poster early, anyone after window)</button>
+      </form>
+      <form id="challengeForm">
+        <label>Submission id <input name="submission_id" placeholder="0" required /></label>
+        <label>Reason (poster only) <input name="reason" placeholder="Why this assessment is wrong" required /></label>
+        <button class="btn line" type="submit">Challenge as poster</button>
+      </form>
+      <p class="hint" id="txHint">Every write returns a transaction hash — follow it in the explorer.</p>
+      <div class="result" id="txResult" hidden></div>
+    </div>
+  </section>
+
+  <section class="board" id="steward">
+    <div class="section-head">
+      <div><p class="eyebrow">Stewardship</p><h2>Cancel, refund, sweep</h2></div>
+    </div>
+    <div class="ledger">
+      <form id="cancelForm" class="entry">
+        <span class="seal-dot"></span>
+        <div><h3>Cancel bounty</h3><p><input name="bounty_id" placeholder="bounty id" required /></p></div>
+        <div class="meta"><button class="btn ghost dark" type="submit">Cancel</button></div>
+      </form>
+      <form id="refundForm" class="entry">
+        <span class="seal-dot"></span>
+        <div><h3>Refund expired</h3><p><input name="bounty_id" placeholder="bounty id" required /></p></div>
+        <div class="meta"><button class="btn ghost dark" type="submit">Refund</button></div>
+      </form>
+      <div class="entry">
+        <span class="seal-dot"></span>
+        <div><h3>Sweep free balance</h3><p>Owner only — never touches locked escrow.</p></div>
+        <div class="meta"><button class="btn ghost dark" id="sweepBtn" type="button">Sweep</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="passport" id="reputation">
+    <div class="section-head">
+      <div><p class="eyebrow">Portable reputation</p><h2>Hunter passport</h2></div>
+      <form id="repForm"><input name="hunter" placeholder="0x…" size="44" /><button class="btn ghost" type="submit">Inspect</button></form>
+    </div>
+    <div class="passport-card" id="passportCard"><p class="empty">Enter an address to read its hallmarks.</p></div>
+  </section>
+
+  <section class="board" id="claims">
+    <div class="section-head">
+      <div><p class="eyebrow">Your claims</p><h2>My submissions</h2></div>
+      <button class="btn ghost" id="mySubsBtn">Load my submissions</button>
+    </div>
+    <div class="ledger" id="mySubs"><p class="empty">Connect a wallet, then load — every claim stays pending until its receipt is FINALIZED.</p></div>
+  </section>
+
+  <footer class="foot">
+    <p>Hallmark · Future of Work on GenLayer studionet · <code>0xfe57D304623471A6aB8db137d73D2766b610eEA5</code></p>
+    <p class="muted">Severity is graded by validator consensus, not by the poster. Merge state is read from the public GitHub API.</p>
+  </footer>
+</main>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

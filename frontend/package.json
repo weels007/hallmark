@@ -1,0 +1,17 @@
+{
+  "name": "hallmark-future-of-work",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5173",
+    "preview": "vite preview --port 4173",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "genlayer-js": "^1.1.8"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

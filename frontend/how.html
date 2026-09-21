@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How it works — Hallmark · Future of Work</title>
+<meta name="description" content="The Hallmark protocol: escrow, merge verification, severity consensus, portable reputation." />
+<link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+<meta name="theme-color" content="#0e1420" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="./index.html">
+      <span class="brand-seal" aria-hidden="true">H</span>
+      <span class="brand-word">Hallmark<small>Future of Work · GenLayer</small></span>
+    </a>
+    <nav class="nav-links">
+      <a href="./index.html">Landing</a>
+      <a href="./how.html" class="active">How it works</a>
+      <a href="./app.html">Bounty app</a>
+    </nav>
+    <div class="nav-cta">
+      <span class="net-dot" title="studionet"></span>
+      <code class="contract" title="Kontrak aktif">0xfe57…eEA5</code>
+      <a class="btn solid" href="./app.html">Open app</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="page-head">
+    <p class="eyebrow">The protocol</p>
+    <h1>Four stamps to <em>paid</em>.</h1>
+    <p class="lede">Every bounty travels the same assay line — each step stamped on-chain before the next begins.</p>
+  </section>
+
+  <section class="how-grid">
+    <article class="how-card">
+      <span class="how-num">01</span>
+      <h3>Lock escrow</h3>
+      <p>The poster calls <code>post_bounty</code> with four tier amounts and funds the maximum. Funds sit in the contract ledger under <code>total_escrowed</code> — accounted per bounty, never as a verbal promise.</p>
+      <p class="muted">Default tiers: low 10 · medium 50 · high 150 · critical 500.</p>
+    </article>
+    <article class="how-card">
+      <span class="how-num">02</span>
+      <h3>Link the PR</h3>
+      <p>The hunter calls <code>submit_work</code> with the bounty id and the GitHub PR number. One bounty accepts many submissions, but the first resolved payout closes it.</p>
+      <p class="muted">Only <code>org/repo</code> + PR number — no file uploads, no trust.</p>
+    </article>
+    <article class="how-card">
+      <span class="how-num">03</span>
+      <h3>Consensus decides</h3>
+      <p><code>resolve_submission</code> runs one non-deterministic round: fetch the PR and its patch from the public GitHub API, confirm <code>merged</code>, then grade severity with an LLM. Validators re-run the same round and must agree on merge state, merge SHA, and severity. A missing merge SHA blocks settlement.</p>
+      <p class="muted">Rate limits count as transient — validators retry rather than lock bad state.</p>
+    </article>
+    <article class="how-card">
+      <span class="how-num">04</span>
+      <h3>Challenge, then paid</h3>
+      <p>Resolution opens a 3-day challenge window. The poster may veto with a recorded reason (bounty reopens); otherwise anyone finalizes: winner paid, remainder refunded, passport stamped. The poster can also finalize early to waive the wait.</p>
+      <p class="muted">Cancel before resolution refunds the full escrow to the poster.</p>
+    </article>
+  </section>
+
+  <section class="tiers-band">
+    <div class="section-head">
+      <div><p class="eyebrow">Severity tiers</p><h2>What each stamp means</h2></div>
+    </div>
+    <div class="tier-table">
+      <div class="tier-row tier-low"><span>Low · 10</span><p>Docs, typos, minor UI — no behavior change.</p></div>
+      <div class="tier-row tier-medium"><span>Medium · 50</span><p>Non-critical bug or feature gap with a workaround.</p></div>
+      <div class="tier-row tier-high"><span>High · 150</span><p>Security weakness, data-loss risk, broken core flow.</p></div>
+      <div class="tier-row tier-critical"><span>Critical · 500</span><p>RCE, fund loss, auth bypass — worst case, no workaround.</p></div>
+    </div>
+  </section>
+
+  <section class="tiers-band">
+    <div class="section-head">
+      <div><p class="eyebrow">Fund safety</p><h2>Escrow can never get stuck</h2></div>
+    </div>
+    <div class="flow">
+      <div class="flow-step"><span>open</span><p>Escrow counted in <code>total_escrowed</code> the moment the bounty is sealed.</p></div>
+      <div class="flow-arrow" aria-hidden="true">→</div>
+      <div class="flow-step"><span>paid</span><p>One resolve only: winner paid, remainder refunded, counter decremented.</p></div>
+      <div class="flow-arrow" aria-hidden="true">/</div>
+      <div class="flow-step"><span>cancelled</span><p>Poster cancels any time pre-resolution, or anyone triggers <code>refund_expired</code> past the deadline.</p></div>
+    </div>
+    <div class="tier-table">
+      <div class="tier-row"><span>Self-dealing</span><p>Poster cannot submit to their own bounty — the transaction rolls back.</p></div>
+      <div class="tier-row"><span>Evidence bound</span><p>Every submission stores its PR URL; every payout stores the merge SHA and PR title validators agreed on.</p></div>
+      <div class="tier-row"><span>Owner sweep</span><p>Only unaccounted balance (contract balance minus <code>total_escrowed</code>) — locked escrow is untouchable.</p></div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div>
+      <p class="eyebrow">Ready when you are</p>
+      <h2>Bring a repo. Leave with <em>proof</em>.</h2>
+    </div>
+    <div class="cta-actions">
+      <a class="btn solid" href="./app.html">Open the bounty app</a>
+      <a class="btn line" href="./index.html">Back to landing</a>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>Hallmark · Future of Work on GenLayer studionet · <code>0xfe57D304623471A6aB8db137d73D2766b610eEA5</code></p>
+  </footer>
+</main>
+</body>
+</html>
