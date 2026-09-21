@@ -13,10 +13,26 @@ function setHint(msg, kind) {
   if (kind) hint.classList.add(kind);
 }
 
+function scrollToHint() {
+  hint.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function nudgeConnect() {
+  const c = $("#connectBtn");
+  c.scrollIntoView({ behavior: "smooth", block: "center" });
+  c.focus({ preventScroll: true });
+}
+
+function need(value, label) {
+  if (!String(value ?? "").trim()) throw new Error(label + " wajib diisi.");
+  return String(value).trim();
+}
+
 function showResult(html, isErr) {
   resultBox.hidden = false;
   resultBox.classList.toggle("err", !!isErr);
   resultBox.innerHTML = html;
+  resultBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function hideResult() {
@@ -99,18 +115,25 @@ function showErrorResult(fn, err) {
 }
 
 async function writeConfirmed(fn, args = [], btn) {
-  if (!writeClient || !connectedAddr)
-    throw new Error("Connect a wallet first (MetaMask on studionet).");
+  if (!writeClient || !connectedAddr) {
+    const err = new Error("Connect a wallet first (MetaMask on studionet).");
+    setHint(err.message, "err");
+    scrollToHint();
+    nudgeConnect();
+    throw err;
+  }
   hideResult();
-  const hash = await writeClient.writeContract({
-    address: CONTRACT,
-    functionName: fn,
-    args,
-    value: BigInt(0),
-  });
-  setHint(`Pending ${fn} → ${hash} (waiting for FINALIZED…)`);
-  if (btn) btn.disabled = true;
+  const label = btn ? btn.textContent : "";
+  if (btn) { btn.disabled = true; btn.textContent = "Working…"; }
   try {
+    const hash = await writeClient.writeContract({
+      address: CONTRACT,
+      functionName: fn,
+      args,
+      value: BigInt(0),
+    });
+    setHint(`Pending ${fn} → ${hash} (waiting for FINALIZED…)`);
+    scrollToHint();
     const receipt = await readClient.waitForTransactionReceipt({
       hash,
       status: "FINALIZED",
@@ -121,9 +144,10 @@ async function writeConfirmed(fn, args = [], btn) {
     return { hash, receipt };
   } catch (e) {
     setHint(`${fn} failed: ${e.message}`, "err");
+    scrollToHint();
     throw e;
   } finally {
-    if (btn) btn.disabled = false;
+    if (btn) { btn.disabled = false; btn.textContent = label; }
   }
 }
 
@@ -211,7 +235,8 @@ $("#postForm").onsubmit = async (e) => {
   const dl = (f.get("deadline") || "").toString().trim();
   const deadline = dl ? Math.floor(new Date(dl).getTime() / 1000) : 0;
   try {
-    const { hash, receipt } = await writeConfirmed("post_bounty", [f.get("repo").trim(), f.get("title").trim(), f.get("description") || "", String(Number(f.get("low"))), String(Number(f.get("med"))), String(Number(f.get("high"))), String(Number(f.get("crit"))), String(deadline)], e.submitter);
+    const repo = need(f.get("repo"), "Repository"), title = need(f.get("title"), "Title");
+    const { hash, receipt } = await writeConfirmed("post_bounty", [repo, title, f.get("description") || "", String(Number(f.get("low"))), String(Number(f.get("med"))), String(Number(f.get("high"))), String(Number(f.get("crit"))), String(deadline)], e.submitter);
     showResult(baseResultHtml("post_bounty", hash, receipt), false);
     refresh();
   }
@@ -221,7 +246,7 @@ $("#submitForm").onsubmit = async (e) => {
   e.preventDefault();
   const f = new FormData(e.target);
   try {
-    const { hash, receipt } = await writeConfirmed("submit_work", [String(f.get("bounty_id")).trim(), String(f.get("pr")).trim(), f.get("notes") || ""], e.submitter);
+    const { hash, receipt } = await writeConfirmed("submit_work", [need(f.get("bounty_id"), "Bounty id"), need(f.get("pr"), "PR number"), f.get("notes") || ""], e.submitter);
     showResult(baseResultHtml("submit_work", hash, receipt), false);
     mySubs();
   }
@@ -230,7 +255,7 @@ $("#submitForm").onsubmit = async (e) => {
 $("#resolveForm").onsubmit = async (e) => {
   e.preventDefault();
   const f = new FormData(e.target);
-  const sid = String(f.get("submission_id")).trim();
+  const sid = need(f.get("submission_id"), "Submission id");
   try {
     const { hash, receipt } = await writeConfirmed("resolve_submission", [sid], e.submitter);
     await showResolveResult(sid, hash, receipt);
@@ -242,7 +267,7 @@ $("#finalizeForm").onsubmit = async (e) => {
   e.preventDefault();
   const f = new FormData(e.target);
   try {
-    const { hash, receipt } = await writeConfirmed("finalize_submission", [String(f.get("submission_id")).trim()], e.submitter);
+    const { hash, receipt } = await writeConfirmed("finalize_submission", [need(f.get("submission_id"), "Submission id")], e.submitter);
     showResult(baseResultHtml("finalize_submission", hash, receipt), false);
     refresh(); mySubs();
   }
@@ -252,7 +277,7 @@ $("#challengeForm").onsubmit = async (e) => {
   e.preventDefault();
   const f = new FormData(e.target);
   try {
-    const { hash, receipt } = await writeConfirmed("challenge_submission", [String(f.get("submission_id")).trim(), f.get("reason")], e.submitter);
+    const { hash, receipt } = await writeConfirmed("challenge_submission", [need(f.get("submission_id"), "Submission id"), need(f.get("reason"), "Reason")], e.submitter);
     showResult(baseResultHtml("challenge_submission", hash, receipt), false);
     refresh(); mySubs();
   }
@@ -262,7 +287,7 @@ $("#cancelForm").onsubmit = async (e) => {
   e.preventDefault();
   const f = new FormData(e.target);
   try {
-    const { hash, receipt } = await writeConfirmed("cancel_bounty", [String(f.get("bounty_id")).trim()], e.submitter);
+    const { hash, receipt } = await writeConfirmed("cancel_bounty", [need(f.get("bounty_id"), "Bounty id")], e.submitter);
     showResult(baseResultHtml("cancel_bounty", hash, receipt), false);
     refresh();
   }
@@ -272,7 +297,7 @@ $("#refundForm").onsubmit = async (e) => {
   e.preventDefault();
   const f = new FormData(e.target);
   try {
-    const { hash, receipt } = await writeConfirmed("refund_expired", [String(f.get("bounty_id")).trim()], e.submitter);
+    const { hash, receipt } = await writeConfirmed("refund_expired", [need(f.get("bounty_id"), "Bounty id")], e.submitter);
     showResult(baseResultHtml("refund_expired", hash, receipt), false);
     refresh();
   }

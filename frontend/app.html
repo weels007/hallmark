@@ -53,7 +53,7 @@
     <div class="panel">
       <p class="eyebrow">Post a bounty</p>
       <h2>Describe the defect, stake the outcome</h2>
-      <form id="postForm">
+      <form id="postForm" novalidate>
         <label>Repository <input name="repo" placeholder="octocat/Hello-World" required /></label>
         <label>Title <input name="title" placeholder="Fix auth bypass on reset flow" required /></label>
         <label>Brief <textarea name="description" rows="3" placeholder="Repro steps, impact, links…"></textarea></label>
@@ -71,21 +71,21 @@
     <div class="panel">
       <p class="eyebrow">Submit &amp; resolve</p>
       <h2>Link work, trigger consensus</h2>
-      <form id="submitForm">
+      <form id="submitForm" novalidate>
         <label>Bounty id <input name="bounty_id" placeholder="0" required /></label>
         <label>PR number <input name="pr" placeholder="42" required /></label>
         <label>Notes <input name="notes" placeholder="What changed, test evidence" /></label>
         <button class="btn line" type="submit">Submit work</button>
       </form>
-      <form id="resolveForm">
+      <form id="resolveForm" novalidate>
         <label>Submission id <input name="submission_id" placeholder="0" required /></label>
         <button class="btn solid" type="submit">Resolve by consensus</button>
       </form>
-      <form id="finalizeForm">
+      <form id="finalizeForm" novalidate>
         <label>Submission id <input name="submission_id" placeholder="0" required /></label>
         <button class="btn line" type="submit">Finalize (poster early, anyone after window)</button>
       </form>
-      <form id="challengeForm">
+      <form id="challengeForm" novalidate>
         <label>Submission id <input name="submission_id" placeholder="0" required /></label>
         <label>Reason (poster only) <input name="reason" placeholder="Why this assessment is wrong" required /></label>
         <button class="btn line" type="submit">Challenge as poster</button>
@@ -100,12 +100,12 @@
       <div><p class="eyebrow">Stewardship</p><h2>Cancel, refund, sweep</h2></div>
     </div>
     <div class="ledger">
-      <form id="cancelForm" class="entry">
+      <form id="cancelForm" class="entry" novalidate>
         <span class="seal-dot"></span>
         <div><h3>Cancel bounty</h3><p><input name="bounty_id" placeholder="bounty id" required /></p></div>
         <div class="meta"><button class="btn ghost dark" type="submit">Cancel</button></div>
       </form>
-      <form id="refundForm" class="entry">
+      <form id="refundForm" class="entry" novalidate>
         <span class="seal-dot"></span>
         <div><h3>Refund expired</h3><p><input name="bounty_id" placeholder="bounty id" required /></p></div>
         <div class="meta"><button class="btn ghost dark" type="submit">Refund</button></div>
@@ -121,7 +121,7 @@
   <section class="passport" id="reputation">
     <div class="section-head">
       <div><p class="eyebrow">Portable reputation</p><h2>Hunter passport</h2></div>
-      <form id="repForm"><input name="hunter" placeholder="0x…" size="44" /><button class="btn ghost" type="submit">Inspect</button></form>
+      <form id="repForm" novalidate><input name="hunter" placeholder="0x…" size="44" /><button class="btn ghost" type="submit">Inspect</button></form>
     </div>
     <div class="passport-card" id="passportCard"><p class="empty">Enter an address to read its hallmarks.</p></div>
   </section>
