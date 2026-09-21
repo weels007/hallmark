@@ -287,3 +287,4 @@ $("#sweepBtn").onclick = async (e) => {
 };
 
 refresh();
+window.__hallmarkReady = true;

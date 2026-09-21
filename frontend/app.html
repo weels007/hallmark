@@ -141,5 +141,17 @@
 </main>
 
 <script type="module" src="./app.js"></script>
+<script>
+window.addEventListener("load", function () {
+  setTimeout(function () {
+    if (!window.__hallmarkReady) {
+      var h = document.getElementById("txHint");
+      if (h) { h.textContent = "App script gagal dimuat. Jangan buka file ini langsung (file://) — jalankan npm run dev atau buka URL Vercel, dan pastikan internet menyala."; h.classList.add("err"); }
+      var l = document.getElementById("ledger");
+      if (l) { l.innerHTML = "<p class='empty'>App tidak termuat. Lihat pesan di bawah (Submit &amp; resolve).</p>"; }
+    }
+  }, 4000);
+});
+</script>
 </body>
 </html>
