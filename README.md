@@ -68,6 +68,7 @@ Studionet, 20 Sep 2026, wallet `cpe-deploy`/`cpe-v2`:
 
 - 💸 Fund 2500 wei → post (genlayer-js) → submit PR #218 (merged, SHA `8c899cc…`) → resolve `MAJORITY_AGREE` 3/3: `medium`, payout 50 → finalize poster → **`paid`**, passport `contributor`/earned 50.
 - 🧪 Adversarial 13/13: past-deadline · 6× unknown-record write · sweep-guard · list-empty · 2× view-guard · funded-post · unmerged-resolve (`[EXPECTED] PR not merged yet`, fixture PR open #11245).
+- 🔧 Root-cause tertutup via explorer: SDK string-args crash (`to_bytes`) → koersi `u256` di kontrak; terbukti via jalur payable (post string + `value` 500, tanpa pre-fund) → submit PR #218 → resolve `medium`.
 - 🔍 Batch-2 manual: double-finalize · challenge-accepted · cancel-paid · submit-paid · refund-tanpa-deadline · cancel non-poster · self-hunt · bad-repo · owner-cancel + refund — semua menolak/berhasil sesuai desain.
 
 <details>
@@ -92,7 +93,7 @@ npm run build                               # output dist/
 ```
 
 - `/` landing · `/how.html` protokol + fund-safety · `/app.html` ledger, post/submit/resolve, passport, my-submissions.
-- Tiap write menunggu receipt `FINALIZED` per hash; panel hasil baca-balik `get_submission` + `get_bounty` dari chain + deep-link `explorer-studio.genlayer.com/tx/{hash}`.
+- Tiap write menunggu receipt `ACCEPTED` per hash (state langsung terbaca; `FINALIZED` menyusul di explorer); panel hasil baca-balik `get_submission` + `get_bounty` dari chain + deep-link `explorer-studio.genlayer.com/tx/{hash}`.
 - Deploy (Vercel): import repo → setting default — `vercel.json` sudah mengatur build `frontend/` → `frontend/dist`.
 
 ```

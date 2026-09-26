@@ -54,10 +54,11 @@
 - Temuan batch-2: CLI membuang arg string kosong (calldata 2 arg → TypeError konsensus, tanpa perubahan state) dan memaksa `' '`→`0` lolos sebagai pr_number — kontrak diperketat: `pr_number` harus positif-numerik, lalu redeploy ke 0x595B…EF9Fd.
 
 ## Kontrak final 0x595B…EF9Fd (20 Sep 2026, E2E OK)
-- Deploy: tx `0x9be96921686463946819d5c75bd4df3003ae882749a44fbc292009bdef531ebc`, MAJORITY_AGREE. Fund cpe-v2 2500 wei.
-- Malformed submit: `pr 0` + `pr abc` → `[EXPECTED] pr_number must be a positive PR number`.
+- Deploy: tx `0xb217ae3220560c92ca16e021ed173f3e43d70f48676001f8b86207d478341d84`, MAJORITY_AGREE. Perbaikan: koersi `u256(int(x))` untuk tier+deadline (akar `AttributeError: 'str' has no attribute 'to_bytes'` dari SDK string-args).
+- Terbukti via SDK persis jalur frontend: post string-args + `value` 500 (payable, tanpa pre-fund) → bid 0 record benar (tier 10/50/150/500, escrowed 500) → submit PR 218 → resolve konsensus `medium`.
+- Catatan: dua transfer pre-fund (`account send` 2500 wei, 0.001 GEN) kena `CANCELED/NO_MAJORITY` (flaky validator hari itu, bukan kode) — jalur payable justru jadi alternatif yang terbukti bekerja.
 - Adversarial: 13/13 PASS, 0 SKIP (dengan `-UnmergedPR 11245`).
-- E2E: bid 3 (cpe-v2, genlayer-js) → sid 1 (cpe-deploy, PR 218) → resolve medium → finalize poster → paid 50, winner cpe-deploy.
+- E2E build ini: bid 1 (SDK payable, genlayer-js) → sid 0 (cpe-deploy, PR 218) → resolve konsensus `medium`/pending. Finalize tidak dieksekusi di sini (poster = akun sekali-pakai; kode finalize identik dengan build yang sudah terbukti paid 50 di 0x3cA0).
 
 ## Hasil test sebelumnya
 - list_bounties: OK -> []
