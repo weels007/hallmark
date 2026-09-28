@@ -1,7 +1,7 @@
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 
-const CONTRACT = "0x595B17f0b0D28aBb0f9ab9818a9FE7dF7b3EF9Fd";
+const CONTRACT = "0xFB1a576cDC1caD7bFD59900097eb335AF4b7DD91";
 const $ = (s) => document.querySelector(s);
 const ledger = $("#ledger"), card = $("#passportCard"), hint = $("#txHint"), resultBox = $("#txResult");
 

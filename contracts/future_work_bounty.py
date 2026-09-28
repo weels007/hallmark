@@ -539,6 +539,9 @@ class FutureOfWorkBounty(gl.Contract):
 
     @gl.public.view
     def list_submissions(self, hunter: Address) -> list:
+        # Coerce: SDK clients deliver Address params as plain str, which would
+        # crash TreeMap comparison (raw AssertionError). Normalize first.
+        hunter = Address(str(hunter))
         out: list = []
         for i in range(int(self.submission_count)):
             sid = str(i)
@@ -549,6 +552,8 @@ class FutureOfWorkBounty(gl.Contract):
 
     @gl.public.view
     def get_reputation(self, hunter: Address) -> dict:
+        # Same coercion as list_submissions: accept plain-str addresses.
+        hunter = Address(str(hunter))
         if hunter not in self.profiles:
             return {"hunter": str(hunter), "level": "novice", "completed": "0", "total_earned": "0",
                     "breakdown": {"low": "0", "medium": "0", "high": "0", "critical": "0"}}

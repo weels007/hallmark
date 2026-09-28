@@ -2,8 +2,8 @@
 
 - Wallet dipakai: `cpe-deploy` (0xD0B8fFA6ea2572D2a8F16512CAbB21eCFe6ea48b) — cocok dengan `wallet/cpe-deploy.json`
 - Hunter uji: `cpe-v2` (0x689759bb926e032eafb1ee986ed7a98c1496ec1c) — cocok `wallet/cpe-v2.json`
-- Kontrak aktif: 0x595B17f0b0D28aBb0f9ab9818a9FE7dF7b3EF9Fd (deploy SUCCESS 20 Sep 2026, MAJORITY_AGREE; view-guard + pr_number hardening + challenge window/finalize, SHA wajib, koersi ID)
-- Kontrak lama (jangan dipakai): 0x3cA04311cbC3bedBd28615c81cb61482A865A4cA (view-guard tanpa pr-hardening; 13/13 adversarial + E2E medium/50 arsip di bawah), 0x78b6123d7e5A7eb7Ce7FB69474F77bfF52C5c3Cd (pra-view-guard; happy-path + sengketa 14 Sep 2026 tetap valid sebagai arsip)
+- Kontrak aktif: 0xFB1a576cDC1caD7bFD59900097eb335AF4b7DD91 (deploy SUCCESS 21 Sep 2026, MAJORITY_AGREE; view-guard + pr-hardening + u256/Address coercion, SHA wajib)
+- Kontrak lama (jangan dipakai): 0x595B17f0b0D28aBb0f9ab9818a9FE7dF7b3EF9Fd (u256-fix; string-post + resolve medium), 0x3cA04311cbC3bedBd28615c81cb61482A865A4cA (13/13 adversarial + E2E medium/50), 0x78b6123d7e5A7eb7Ce7FB69474F77bfF52C5c3Cd (pra-view-guard; happy-path + sengketa 14 Sep 2026 tetap valid sebagai arsip)
 - Kontrak lama (jangan dipakai): 0x78b6123d7e5A7eb7Ce7FB69474F77bfF52C5c3Cd (pra-view-guard; happy-path + sengketa 14 Sep 2026 tetap valid sebagai arsip), 0xEab1d20766fF720d0afcb9d91b9f2380484C15df (gagal: dataclass), 0x4eBbf266F43879e89851580A72e9de270A0252Ef (wajib msg.value), 0x4f80D863F313b62a7a0DcEfb94d3DF7987ec1Ea6 (pra-batch-A), 0xa83B6bF7b4784023f3F3630B56Ed6B168e230056 (crash ID int), 0xda8F7B3A15053730FD9EC078886B7E810A4c5A5D (resolve langsung bayar, tanpa sengketa)
 
 ## Happy-path + sengketa end-to-end (KONTRAK FINAL 0x78b6…5c3Cd, 14 Sep 2026)
@@ -51,14 +51,14 @@
 - Adversarial: 13/13 PASS, 0 SKIP (dengan dana + fixture `-UnmergedPR 11245`, PR open octocat/Hello-World) — termasuk `unmerged-resolve` → `[EXPECTED] PR not merged yet`, `sweep-guard`, dan 2 view-guard via payload base64. Catatan: sweep-guard kini pin akun cpe-deploy + jalan TERAKHIR agar tidak menguras dana probe.
 - E2E: post_bounty bid 3 (cpe-v2, genlayer-js, tiers 10/50/150/500) → submit_work sid 1 (cpe-deploy, PR 218) → resolve konsensus MAJORITY_AGREE 3/3: medium, payout 50, SHA 8c899cc… (konsisten dengan build lama) → finalize dini oleh poster → bounty paid, passport cpe-deploy contributor/earned 50.
 - Batch-2 manual (kontrak ini): double-finalize → `Already settled`, challenge-accepted → `Only pending…`, cancel-paid → `Cannot cancel`, submit-paid → `Bounty not open`, refund-tanpa-deadline → `No deadline set`, cancel non-poster → `Only poster`, self-hunt → `poster cannot hunt`, bad-repo → `repo must be`, owner-cancel bid 0 → SUCCESS + refund.
-- Temuan batch-2: CLI membuang arg string kosong (calldata 2 arg → TypeError konsensus, tanpa perubahan state) dan memaksa `' '`→`0` lolos sebagai pr_number — kontrak diperketat: `pr_number` harus positif-numerik, lalu redeploy ke 0x595B…EF9Fd.
+- Temuan batch-2: CLI membuang arg string kosong (calldata 2 arg → TypeError konsensus, tanpa perubahan state) dan memaksa `' '`→`0` lolos sebagai pr_number — kontrak diperketat: `pr_number` harus positif-numerik, lalu redeploy ke 0xFB1a…DD91.
 
-## Kontrak final 0x595B…EF9Fd (20 Sep 2026, E2E OK)
-- Deploy: tx `0xb217ae3220560c92ca16e021ed173f3e43d70f48676001f8b86207d478341d84`, MAJORITY_AGREE. Perbaikan: koersi `u256(int(x))` untuk tier+deadline (akar `AttributeError: 'str' has no attribute 'to_bytes'` dari SDK string-args).
-- Terbukti via SDK persis jalur frontend: post string-args + `value` 500 (payable, tanpa pre-fund) → bid 0 record benar (tier 10/50/150/500, escrowed 500) → submit PR 218 → resolve konsensus `medium`.
-- Catatan: dua transfer pre-fund (`account send` 2500 wei, 0.001 GEN) kena `CANCELED/NO_MAJORITY` (flaky validator hari itu, bukan kode) — jalur payable justru jadi alternatif yang terbukti bekerja.
-- Adversarial: 13/13 PASS, 0 SKIP (dengan `-UnmergedPR 11245`).
-- E2E build ini: bid 1 (SDK payable, genlayer-js) → sid 0 (cpe-deploy, PR 218) → resolve konsensus `medium`/pending. Finalize tidak dieksekusi di sini (poster = akun sekali-pakai; kode finalize identik dengan build yang sudah terbukti paid 50 di 0x3cA0).
+## Kontrak final 0xFB1a…DD91 (21 Sep 2026, live)
+- Deploy: tx `0x15e384e5a32b1b84b0cc602e2d7dd98fcf81f1a3c89d0bfd290910adeadf86fd`, MAJORITY_AGREE. Kumulatif: view-guard + pr-hardening + u256-coercion + Address-coercion.
+- Akar masalah frontend mati total: `list_submissions`/`get_reputation` menerima Address polos sebagai str dari SDK → crash `AssertionError` di TreeMap (CLI lolos via prefix `addr#`). Perbaikan: `Address(str(hunter))` di kedua view.
+- Terbukti via SDK persis jalur browser: `get_reputation` string → `novice`, `list_submissions` string → `[]`; payable post → submit PR 218 → resolve konsensus `medium`.
+- Finalize/challenge/cancel/refund/sweep: kode identik dengan build yang sudah terbukti (13/13 + paid 50 di arsip).
+- Arsip: 0x595B (u256-fix; string-post + resolve medium), 0x3cA0 (13/13 + paid 50), 0x78b6 (14 Sep).
 
 ## Hasil test sebelumnya
 - list_bounties: OK -> []
