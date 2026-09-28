@@ -57,6 +57,7 @@
 - Deploy: tx `0x15e384e5a32b1b84b0cc602e2d7dd98fcf81f1a3c89d0bfd290910adeadf86fd`, MAJORITY_AGREE. Kumulatif: view-guard + pr-hardening + u256-coercion + Address-coercion.
 - Akar masalah frontend mati total: `list_submissions`/`get_reputation` menerima Address polos sebagai str dari SDK → crash `AssertionError` di TreeMap (CLI lolos via prefix `addr#`). Perbaikan: `Address(str(hunter))` di kedua view.
 - Terbukti via SDK persis jalur browser: `get_reputation` string → `novice`, `list_submissions` string → `[]`; payable post → submit PR 218 → resolve konsensus `medium`.
+- Adversarial 0xFB1a (28 Sep 2026): 11 PASS + 2 SKIP (funded + unmerged butuh dana). Insiden: satu run sempat 2 FAIL transient (`finalize/challenge-unknown`) padahal receipt masing-masing `MAJORITY_AGREE` + payload `[EXPECTED]` benar — rerun langsung hijau semua; flaky antrean/nonce studionet saat write beruntun, bukan kode.
 - Finalize/challenge/cancel/refund/sweep: kode identik dengan build yang sudah terbukti (13/13 + paid 50 di arsip).
 - Arsip: 0x595B (u256-fix; string-post + resolve medium), 0x3cA0 (13/13 + paid 50), 0x78b6 (14 Sep).
 
