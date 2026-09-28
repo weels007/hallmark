@@ -33,6 +33,7 @@ code{font-family:var(--mono);font-size:.85em}
 .btn.solid:hover{filter:brightness(1.07)}
 .btn.line{background:transparent;color:var(--paper);border-color:var(--gold)}
 .btn.ghost{background:transparent;color:var(--paper);border-color:var(--line-light)}
+.btn:disabled{opacity:.55;cursor:wait}
 .btn:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
 main{max-width:1760px;margin:0 auto;padding:0 clamp(1rem,3vw,3rem) 4rem}

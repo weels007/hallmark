@@ -114,6 +114,15 @@ function showErrorResult(fn, err) {
     <p class="note">This is the real chain/SDK error (e.g. <code>[EXPECTED]</code> rollbacks). No state was changed.</p>`, true);
 }
 
+// Rejects if the wallet/user never responds, so buttons can never lock forever.
+// NOTE: a late wallet approval may still land on-chain afterwards as an orphan
+// tx — callers must tell the user to check the ledger/explorer before retrying.
+function withTimeout(promise, ms, message) {
+  let timer;
+  const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(message)), ms); });
+  return Promise.race([Promise.resolve(promise).finally(() => clearTimeout(timer)), timeout]);
+}
+
 async function writeConfirmed(fn, args = [], btn) {
   if (!writeClient || !connectedAddr) {
     const err = new Error("Connect a wallet first (MetaMask on studionet).");
@@ -129,12 +138,12 @@ async function writeConfirmed(fn, args = [], btn) {
   try {
     setHint(`Waiting for wallet signature — confirm "${fn}" in MetaMask (check the extension popup, it may open behind this window)…`);
     scrollToHint();
-    hash = await writeClient.writeContract({
+    hash = await withTimeout(writeClient.writeContract({
       address: CONTRACT,
       functionName: fn,
       args,
       value: BigInt(0),
-    });
+    }), 180000, `Wallet did not respond in 180s — open the MetaMask popup and approve/reject there. If you already approved, check the ledger before retrying (the tx may have landed).`);
     setHint(`Pending ${fn} → ${hash} (waiting for ACCEPTED by consensus…)`);
     scrollToHint();
     let receipt;
@@ -225,7 +234,8 @@ $("#connectBtn").onclick = async (e) => {
   try {
     if (!window.ethereum) { setHint("No injected wallet found.", "err"); return; }
     btn.disabled = true;
-    const [addr] = await window.ethereum.request({ method: "eth_requestAccounts" });
+    setHint("Waiting for wallet — approve the connection in the MetaMask popup…");
+    const [addr] = await withTimeout(window.ethereum.request({ method: "eth_requestAccounts" }), 60000, "Wallet did not respond in 60s — open the MetaMask popup and approve, then Connect again.");
     writeClient = createClient({ chain: studionet, account: addr, provider: window.ethereum });
     try { await writeClient.connect("studionet"); } catch (err) { setHint("Network switch: " + err.message, "err"); }
     connectedAddr = addr;
