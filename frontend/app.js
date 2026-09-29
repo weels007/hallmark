@@ -1,7 +1,7 @@
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 
-const CONTRACT = "0xFB1a576cDC1caD7bFD59900097eb335AF4b7DD91";
+const CONTRACT = "0xADa53Ae208afC725027eC81d30dd3ba882cca658";
 const $ = (s) => document.querySelector(s);
 const ledger = $("#ledger"), card = $("#passportCard"), hint = $("#txHint"), resultBox = $("#txResult");
 
@@ -172,7 +172,7 @@ function entry(b) {
   d.className = "entry";
   d.dataset.sev = (b.final_severity || "open").toLowerCase();
   d.innerHTML = `<span class="seal-dot"></span>
-    <div><h3>#${esc(b.id)} · ${esc(b.title)}</h3><p>${esc(b.repo)} · ${esc(b.status)}${b.final_severity ? " · " + esc(b.final_severity) : ""}</p></div>
+    <div><h3>#${esc(b.id)} · ${esc(b.title)}</h3><p>${esc(b.repo)} · ${esc(b.status)}${b.final_severity ? " · " + esc(b.final_severity) : ""}${b.open_claims && b.open_claims !== "0" ? " · " + esc(b.open_claims) + " claim(s) awaiting resolve" : ""}</p></div>
     <div class="meta">${b.status === "paid" ? "◉ paid" : "○ " + esc(b.status)}</div>`;
   return d;
 }

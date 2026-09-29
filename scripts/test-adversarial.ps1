@@ -1,7 +1,7 @@
 # Adversarial tests for FutureOfWorkBounty (studionet)
 # Wallet: cpe-deploy (poster). Contract set via $C or first arg.
 # Usage: ./test-adversarial.ps1 [contractAddress] [-UnmergedPR <open-pr-number>]
-param([string]$C = "0xFB1a576cDC1caD7bFD59900097eb335AF4b7DD91", [string]$UnmergedPR = "")
+param([string]$C = "0xADa53Ae208afC725027eC81d30dd3ba882cca658", [string]$UnmergedPR = "")
 
 # Pin identity: sections 1-6 + sweep run as cpe-deploy (owner/poster); section 7
 # temporarily switches to cpe-v2 (hunter) and back. Never rely on ambient account.
@@ -89,6 +89,9 @@ else {
 # Runs as owner (cpe-deploy, pinned above). After funded sections the contract
 # normally holds free balance -> sweep succeeds WITHOUT touching locked escrow.
 # Either outcome passes; anything else (e.g. non-owner "Only owner") fails.
+# NOTE: this machine's genlayer CLI state is shared with other agents/projects:
+# re-pin identity here in case another session switched the active account.
+genlayer account use cpe-deploy 2>&1 | Out-Null
 $r = genlayer write $C sweep 2>&1 | Out-String
 if ($r -match "Nothing to sweep" -or $r -match "status: 'return'") { Write-Host "PASS: sweep-guard" }
 else { Write-Host "FAIL: sweep-guard"; $script:fail++ }

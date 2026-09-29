@@ -15,6 +15,10 @@ VALID_SEVERITIES = ("low", "medium", "high", "critical")
 
 CHALLENGE_PERIOD = 259200
 
+# Fresh-claim shelf life: expiry cannot preempt an evaluation younger than
+# this, but stale claims can never lock escrow forever (griefing bound).
+CLAIM_TTL = 604800
+
 
 @gl.evm.contract_interface
 class _Recipient:
@@ -82,6 +86,7 @@ class Bounty:
     merge_sha: str
     evidence_title: str
     challenge_deadline: u256
+    open_claims: u256
 
 
 @allow_storage
@@ -97,6 +102,7 @@ class Submission:
     pr_url: str
     merge_sha: str
     challenge_reason: str
+    submitted_at: u256
 
 
 @allow_storage
@@ -189,6 +195,7 @@ class FutureOfWorkBounty(gl.Contract):
             merge_sha="",
             evidence_title="",
             challenge_deadline=u256(0),
+            open_claims=u256(0),
         )
         self.bounty_order.append(bid)
         self.bounty_count = u256(int(self.bounty_count) + 1)
@@ -208,6 +215,7 @@ class FutureOfWorkBounty(gl.Contract):
             raise gl.vm.UserError(f"{ERROR_EXPECTED} pr_number must be a positive PR number")
         if gl.message.sender_address == bounty.poster:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} poster cannot hunt own bounty")
+        now = int(datetime.now(timezone.utc).timestamp())
         sid = str(int(self.submission_count))
         self.submissions[sid] = Submission(
             bounty_id=bounty_id,
@@ -220,8 +228,11 @@ class FutureOfWorkBounty(gl.Contract):
             pr_url=f"https://github.com/{bounty.repo}/pull/{pr}",
             merge_sha="",
             challenge_reason="",
+            submitted_at=u256(now),
         )
         self.submission_count = u256(int(self.submission_count) + 1)
+        bounty.open_claims = u256(int(bounty.open_claims) + 1)
+        self.bounties[bounty_id] = bounty
         return sid
 
     def _fetch_and_grade(self, repo: str, pr_number: str, issue_desc: str) -> dict:
@@ -368,6 +379,8 @@ class FutureOfWorkBounty(gl.Contract):
         bounty.merge_sha = sha
         bounty.evidence_title = str(pr.get("title", ""))[:500]
         bounty.challenge_deadline = u256(now + CHALLENGE_PERIOD)
+        if int(bounty.open_claims) > 0:
+            bounty.open_claims = u256(int(bounty.open_claims) - 1)
         self.bounties[sub.bounty_id] = bounty
 
         return {"severity": severity, "payout": str(int(payout)), "merged": True,
@@ -466,6 +479,10 @@ class FutureOfWorkBounty(gl.Contract):
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Only poster can cancel")
         if bounty.status != "open":
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Cannot cancel closed bounty")
+        # Expiry/cancel must not preempt a fresh hunter evaluation. The owner
+        # keeps a bypass as the bounded unilateral recovery path.
+        if int(bounty.open_claims) > 0 and gl.message.sender_address != self.owner:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Resolve pending submissions first")
         bounty.status = "cancelled"
         self.bounties[bounty_id] = bounty
         if int(bounty.escrowed) > 0:
@@ -485,6 +502,13 @@ class FutureOfWorkBounty(gl.Contract):
         now = int(datetime.now(timezone.utc).timestamp())
         if now <= int(bounty.deadline):
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Not expired yet")
+        # Expiry cannot preempt an available (fresh) evaluation. Stale claims
+        # older than CLAIM_TTL never block the escape, so junk submissions
+        # cannot lock escrow forever.
+        for i in range(int(self.submission_count)):
+            s = self.submissions[str(i)]
+            if s.bounty_id == bounty_id and s.status == "submitted" and now <= int(s.submitted_at) + CLAIM_TTL:
+                raise gl.vm.UserError(f"{ERROR_EXPECTED} Resolve pending submissions first")
         bounty.status = "cancelled"
         self.bounties[bounty_id] = bounty
         if int(bounty.escrowed) > 0:
@@ -513,6 +537,7 @@ class FutureOfWorkBounty(gl.Contract):
             "escrowed": str(int(b.escrowed)), "poster": str(b.poster),
             "deadline": str(int(b.deadline)), "merge_sha": b.merge_sha, "evidence_title": b.evidence_title,
             "challenge_deadline": str(int(b.challenge_deadline)),
+            "open_claims": str(int(b.open_claims)),
         }
 
     @gl.public.view
@@ -521,7 +546,7 @@ class FutureOfWorkBounty(gl.Contract):
         for i in range(len(self.bounty_order)):
             bid = self.bounty_order[i]
             b = self.bounties[bid]
-            out.append({"id": bid, "repo": b.repo, "title": b.title, "status": b.status, "final_severity": b.final_severity})
+            out.append({"id": bid, "repo": b.repo, "title": b.title, "status": b.status, "final_severity": b.final_severity, "open_claims": str(int(b.open_claims))})
         return out
 
     @gl.public.view
@@ -534,7 +559,7 @@ class FutureOfWorkBounty(gl.Contract):
             "id": submission_id, "bounty_id": s.bounty_id, "hunter": str(s.hunter),
             "pr_number": s.pr_number, "pr_url": s.pr_url, "notes": s.notes, "status": s.status,
             "severity": s.severity, "payout": str(int(s.payout)), "merge_sha": s.merge_sha,
-            "challenge_reason": s.challenge_reason,
+            "challenge_reason": s.challenge_reason, "submitted_at": str(int(s.submitted_at)),
         }
 
     @gl.public.view
