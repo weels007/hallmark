@@ -58,6 +58,8 @@
 - Deploy: tx `0x8a07d259013bcad56920742f4e6ea53c2dbc545dc554dda61679376695eef362`, MAJORITY_AGREE, deployer = cpe-deploy terverifikasi via receipt. Kumulatif: view-guard + pr-hardening + u256/Address-coercion + deadline guards.
 - Sweep sebagai cpe-deploy → guard owner lolos (`Nothing to sweep`, kontrak fresh) — kepemilikan fungsional, insiden owner-asing 0x7096 tidak terulang.
 - Adversarial: 11 PASS + 2 SKIP (funded + unmerged butuh dana). SDK string-views: `novice` + `[]` OK.
+- E2E hijau penuh (SDK-only, satu proses): post payable → submit PR 218 → resolve `medium` → finalize poster → **`paid` 50 + passport contributor/earned 50**. Semua tx sukses.
+- Catatan: bid 0 (`Smoke`, poster key terhapus tak sengaja) tertahan `pending` — dapat difinalize siapa pun pasca-jendela 3 hari; bukan bug.
 - T1/T2 deadline-proof + 13/13 + E2E paid: terbukti di build berkode identik (arsip); insiden 2 FAIL transient tercatat di bawah — rerun hijau, flaky antrean bukan kode.
 - Deadline guards (`open_claims`, TTL 7 hari, `submitted_at`): kode identik sejak 0x7096; T1 (expiry vs fresh claim → ditolak, escrow utuh) + T2 (refund sukses) terbukti live di sana.
 - Arsip: 0x7096 (T1/T2 valid; owner jatuh ke asing), 0xFB1a (Address-coercion; string-views + resolve medium), 0x595B (u256-fix), 0x3cA0 (13/13 + paid 50), 0x78b6 (14 Sep).
