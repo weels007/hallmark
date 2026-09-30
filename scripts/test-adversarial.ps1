@@ -1,10 +1,10 @@
 # Adversarial tests for FutureOfWorkBounty (studionet)
 # Wallet: cpe-deploy (poster). Contract set via $C or first arg.
-# Usage: ./test-adversarial.ps1 [contractAddress] [-UnmergedPR <open-pr-number>]
-param([string]$C = "0xADa53Ae208afC725027eC81d30dd3ba882cca658", [string]$UnmergedPR = "")
+# Usage: ./test-adversarial.ps1 [contractAddress]
+param([string]$C = "0x4dc39846CD32aB0033120eFa8Ebd19a0902396f6")
 
-# Pin identity: sections 1-6 + sweep run as cpe-deploy (owner/poster); section 7
-# temporarily switches to cpe-v2 (hunter) and back. Never rely on ambient account.
+# Pin identity: all sections run as cpe-deploy (owner/poster).
+# Never rely on ambient account (CLI state is shared with other agents).
 genlayer account use cpe-deploy 2>&1 | Out-Null
 
 $fail = 0
@@ -50,40 +50,14 @@ if ($r -match "Submission not found" -or $r -match "U3VibWlzc2lvbiBub3QgZm91bmQ"
 elseif ($r -match "InvalidInput|execution failed") { Write-Host "SKIP: view-submission-unknown (needs view-guard redeploy, see DEPLOYMENTS.md)" }
 else { Write-Host "FAIL: view-submission-unknown"; $fail++ }
 
-# 5. Funded happy-path (needs faucet balance; skipped gracefully when unfunded)
+# 5. Payable-required: the CLI cannot send msg.value, so a CLI post must be
+# rejected (SDK payable path is covered in frontend/test-settlement.mjs T-a).
 $r = genlayer write $C post_bounty --args "octocat/Hello-World" "Funded" "x" 10 50 150 500 0 2>&1 | Out-String
-if ($r -match "fund contract first") { Write-Host "SKIP: funded-path (no balance - fund via Studio faucet first)" }
-elseif ($r -match "Write Transaction Hash") { Write-Host "PASS: funded-post accepted" }
-else { Write-Host "FAIL: funded-post (unexpected)"; $fail++ }
+Expect-Rollback "payable-required" $r "must fund escrow in this transaction"
 
-# 6. Resolve must refuse unmerged PRs (needs funds + explicit open-PR fixture; skipped otherwise)
-# Usage: ./test-adversarial.ps1 -UnmergedPR "12"   (PR must still be OPEN in octocat/Hello-World)
-# Posts a probe bounty (cpe-deploy), submits the open PR (cpe-v2, poster cannot self-hunt),
-# resolves -> expects "[EXPECTED] PR not merged yet". Leaves one open probe bounty on-chain by design.
-if ($UnmergedPR -eq "") { Write-Host "SKIP: unmerged-resolve (pass -UnmergedPR <open-pr-number> with a funded wallet to run)" }
-else {
-  genlayer account use cpe-deploy 2>&1 | Out-Null
-  $r = genlayer write $C post_bounty --args "octocat/Hello-World" "UnmergedProbe" "probe" 10 50 150 500 0 2>&1 | Out-String
-  if ($r -match "fund contract first") { Write-Host "SKIP: unmerged-resolve (no balance - fund via Studio faucet first)" }
-  elseif ($r -match "Write Transaction Hash") {
-    $bounties = genlayer call $C list_bounties 2>&1 | Out-String
-    $bid = (([regex]"id: '(\d+)'").Matches($bounties) | Select-Object -Last 1).Groups[1].Value
-    if ($bid -eq "") { Write-Host "FAIL: unmerged-resolve (could not read probe bid)"; $fail++ }
-    else {
-      genlayer account use cpe-v2 2>&1 | Out-Null
-      $r = genlayer write $C submit_work --args $bid $UnmergedPR "probe" 2>&1 | Out-String
-      if ($r -match "Write Transaction Hash") {
-        $subs = genlayer call $C list_submissions --args addr#689759bb926e032eafb1ee986ed7a98c1496ec1c 2>&1 | Out-String
-        $sid = (([regex]"id: '(\d+)'").Matches($subs) | Select-Object -Last 1).Groups[1].Value
-        $r = genlayer write $C resolve_submission --args $sid 2>&1 | Out-String
-        Expect-Rollback "unmerged-resolve" $r "PR not merged yet"
-      }
-      else { Write-Host "FAIL: unmerged-resolve (probe submit rejected)"; $fail++ }
-      genlayer account use cpe-deploy 2>&1 | Out-Null
-    }
-  }
-  else { Write-Host "FAIL: unmerged-resolve (unexpected)"; $fail++ }
-}
+# 6. Resolve must refuse unmerged PRs. Needs an SDK-funded probe bounty
+# (CLI cannot send payable value) — covered live in test-settlement.mjs T-g.
+Write-Host "SKIP: unmerged-resolve (needs SDK-funded probe; see test-settlement.mjs T-g)"
 
 # 7. Fund conservation LAST: sweep must refuse only when nothing is free.
 # Runs as owner (cpe-deploy, pinned above). After funded sections the contract

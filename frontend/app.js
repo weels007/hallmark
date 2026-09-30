@@ -1,7 +1,7 @@
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 
-const CONTRACT = "0xADa53Ae208afC725027eC81d30dd3ba882cca658";
+const CONTRACT = "0x4dc39846CD32aB0033120eFa8Ebd19a0902396f6";
 const $ = (s) => document.querySelector(s);
 const ledger = $("#ledger"), card = $("#passportCard"), hint = $("#txHint"), resultBox = $("#txResult");
 
@@ -252,7 +252,10 @@ $("#postForm").onsubmit = async (e) => {
   const deadline = dl ? Math.floor(new Date(dl).getTime() / 1000) : 0;
   try {
     const repo = need(f.get("repo"), "Repository"), title = need(f.get("title"), "Title");
-    const { hash, receipt } = await writeConfirmed("post_bounty", [repo, title, f.get("description") || "", String(Number(f.get("low"))), String(Number(f.get("med"))), String(Number(f.get("high"))), String(Number(f.get("crit"))), String(deadline)], e.submitter);
+    const lo = Number(f.get("low")), me = Number(f.get("med")), hi = Number(f.get("high")), cr = Number(f.get("crit"));
+    if (!(lo > 0 && me > 0 && hi > 0 && cr > 0)) throw new Error("Tiers must be positive.");
+    if (!(lo <= me && me <= hi && hi <= cr)) throw new Error("Tiers must be ordered low<=med<=high<=crit.");
+    const { hash, receipt } = await writeConfirmed("post_bounty", [repo, title, f.get("description") || "", String(lo), String(me), String(hi), String(cr), String(deadline)], e.submitter);
     showResult(baseResultHtml("post_bounty", hash, receipt), false);
     refresh();
   }

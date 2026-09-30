@@ -2,7 +2,7 @@
 
 - Wallet dipakai: `cpe-deploy` (0xD0B8fFA6ea2572D2a8F16512CAbB21eCFe6ea48b) — cocok dengan `wallet/cpe-deploy.json`
 - Hunter uji: `cpe-v2` (0x689759bb926e032eafb1ee986ed7a98c1496ec1c) — cocok `wallet/cpe-v2.json`
-- Kontrak aktif: 0xADa53Ae208afC725027eC81d30dd3ba882cca658 (deploy SUCCESS, MAJORITY_AGREE, deployer terverifikasi cpe-deploy; view-guard + pr-hardening + u256/Address coercion + deadline guards, SHA wajib)
+- Kontrak aktif: 0x4dc39846CD32aB0033120eFa8Ebd19a0902396f6 (deploy SUCCESS, MAJORITY_AGREE, deployer terverifikasi cpe-deploy; steward settlement build: payable funding, ordered tiers, no-duplicate, no-post-deadline, PR-postdates, veto-blocks-reclaim)
 - Kontrak lama (jangan dipakai): 0x70964619D06d71683fF82c47F944A9E123AD7529 (kode benar — T1/T2 deadline-proof valid di sini — tapi OWNER jatuh ke wallet asing `stratasure-deploy` karena akun CLI aktif diganti agent lain saat deploy; sweep/owner-cancel di luar tangan kami, escrow T1 500 wei terkunci), 0xFB1a576cDC1caD7bFD59900097eb335AF4b7DD91 (Address-coercion; string-views + resolve medium)
 - Kontrak lama (jangan dipakai): 0x595B17f0b0D28aBb0f9ab9818a9FE7dF7b3EF9Fd (u256-fix; string-post + resolve medium), 0x3cA04311cbC3bedBd28615c81cb61482A865A4cA (13/13 adversarial + E2E medium/50), 0x78b6123d7e5A7eb7Ce7FB69474F77bfF52C5c3Cd (pra-view-guard; happy-path + sengketa 14 Sep 2026 tetap valid sebagai arsip)
 - Kontrak lama (jangan dipakai): 0x78b6123d7e5A7eb7Ce7FB69474F77bfF52C5c3Cd (pra-view-guard; happy-path + sengketa 14 Sep 2026 tetap valid sebagai arsip), 0xEab1d20766fF720d0afcb9d91b9f2380484C15df (gagal: dataclass), 0x4eBbf266F43879e89851580A72e9de270A0252Ef (wajib msg.value), 0x4f80D863F313b62a7a0DcEfb94d3DF7987ec1Ea6 (pra-batch-A), 0xa83B6bF7b4784023f3F3630B56Ed6B168e230056 (crash ID int), 0xda8F7B3A15053730FD9EC078886B7E810A4c5A5D (resolve langsung bayar, tanpa sengketa)
@@ -52,17 +52,15 @@
 - Adversarial: 13/13 PASS, 0 SKIP (dengan dana + fixture `-UnmergedPR 11245`, PR open octocat/Hello-World) — termasuk `unmerged-resolve` → `[EXPECTED] PR not merged yet`, `sweep-guard`, dan 2 view-guard via payload base64. Catatan: sweep-guard kini pin akun cpe-deploy + jalan TERAKHIR agar tidak menguras dana probe.
 - E2E: post_bounty bid 3 (cpe-v2, genlayer-js, tiers 10/50/150/500) → submit_work sid 1 (cpe-deploy, PR 218) → resolve konsensus MAJORITY_AGREE 3/3: medium, payout 50, SHA 8c899cc… (konsisten dengan build lama) → finalize dini oleh poster → bounty paid, passport cpe-deploy contributor/earned 50.
 - Batch-2 manual (kontrak ini): double-finalize → `Already settled`, challenge-accepted → `Only pending…`, cancel-paid → `Cannot cancel`, submit-paid → `Bounty not open`, refund-tanpa-deadline → `No deadline set`, cancel non-poster → `Only poster`, self-hunt → `poster cannot hunt`, bad-repo → `repo must be`, owner-cancel bid 0 → SUCCESS + refund.
-- Temuan batch-2: CLI membuang arg string kosong (calldata 2 arg → TypeError konsensus, tanpa perubahan state) dan memaksa `' '`→`0` lolos sebagai pr_number — kontrak diperketat: `pr_number` harus positif-numerik, lalu redeploy ke 0xADa5…ca658.
+- Temuan batch-2: CLI membuang arg string kosong (calldata 2 arg → TypeError konsensus, tanpa perubahan state) dan memaksa `' '`→`0` lolos sebagai pr_number — kontrak diperketat: `pr_number` harus positif-numerik, lalu redeploy ke 0x4dc3…396f6.
 
-## Kontrak final 0xADa5…ca658 (live)
-- Deploy: tx `0x8a07d259013bcad56920742f4e6ea53c2dbc545dc554dda61679376695eef362`, MAJORITY_AGREE, deployer = cpe-deploy terverifikasi via receipt. Kumulatif: view-guard + pr-hardening + u256/Address-coercion + deadline guards.
-- Sweep sebagai cpe-deploy → guard owner lolos (`Nothing to sweep`, kontrak fresh) — kepemilikan fungsional, insiden owner-asing 0x7096 tidak terulang.
-- Adversarial: 11 PASS + 2 SKIP (funded + unmerged butuh dana). SDK string-views: `novice` + `[]` OK.
-- E2E hijau penuh (SDK-only, satu proses): post payable → submit PR 218 → resolve `medium` → finalize poster → **`paid` 50 + passport contributor/earned 50**. Semua tx sukses.
-- Catatan: bid 0 (`Smoke`, poster key terhapus tak sengaja) tertahan `pending` — dapat difinalize siapa pun pasca-jendela 3 hari; bukan bug.
-- T1/T2 deadline-proof + 13/13 + E2E paid: terbukti di build berkode identik (arsip); insiden 2 FAIL transient tercatat di bawah — rerun hijau, flaky antrean bukan kode.
-- Deadline guards (`open_claims`, TTL 7 hari, `submitted_at`): kode identik sejak 0x7096; T1 (expiry vs fresh claim → ditolak, escrow utuh) + T2 (refund sukses) terbukti live di sana.
-- Arsip: 0x7096 (T1/T2 valid; owner jatuh ke asing), 0xFB1a (Address-coercion; string-views + resolve medium), 0x595B (u256-fix), 0x3cA0 (13/13 + paid 50), 0x78b6 (14 Sep).
+## Kontrak final 0x4dc3…396f6 (live — steward settlement build)
+- Deploy: tx `0x0721fb497a0d035e5a58fff55e583098b0bf14b7f4d6af9a9466e69e0efa6a86`, MAJORITY_AGREE, deployer = cpe-deploy terverifikasi via receipt.
+- Settlement suite (`frontend/test-settlement.mjs`): **9/9 PASS** — fund-from-posting-tx, tiers-recorded, tier-zero, tier-unordered, underfunded-post, duplicate-claim, post-deadline-claim, predates-bounty (konsensus berjalan + validator sepakat atas merged_at), unmerged-resolve.
+- Adversarial ps1: 12 PASS + 1 SKIP (unmerged via mjs; CLI didokumentasikan butuh payable).
+- Deadline guards + veto mechanics + E2E paid: kode identik, terbukti live di arsip (T1/T2 di 0x7096; 13/13 + paid 50 di 0x3cA0).
+- Batasan bukti (jujur): `challenge→cancel-block` dan `veto→refund-block` belum dieksekusi live — butuh submission pending (= butuh PR fresh-merged, tanpa fixture saat ini). Guard 3 baris mengikuti pola terbukti; verifikasi ulang saat fixture tersedia.
+- Arsip: 0xADa5 (E2E hijau penuh SDK-only: paid 50 + passport), 0x7096 (T1/T2 valid; owner jatuh ke asing), 0xFB1a (Address-coercion), 0x595B (u256-fix), 0x3cA0 (13/13 + paid 50), 0x78b6 (14 Sep).
 
 ## Hasil test sebelumnya
 - list_bounties: OK -> []

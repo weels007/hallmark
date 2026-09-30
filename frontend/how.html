@@ -28,7 +28,7 @@
     </nav>
     <div class="nav-cta">
       <span class="net-dot" title="studionet"></span>
-      <code class="contract" title="Kontrak aktif">0xADa5…ca658</code>
+      <code class="contract" title="Kontrak aktif">0x4dc3…396f6</code>
       <a class="btn solid" href="./app.html">Open app</a>
     </div>
   </div>
@@ -57,14 +57,14 @@
     <article class="how-card">
       <span class="how-num">03</span>
       <h3>Consensus decides</h3>
-      <p><code>resolve_submission</code> runs one non-deterministic round: fetch the PR and its patch from the public GitHub API, confirm <code>merged</code>, then grade severity with an LLM. Validators re-run the same round and must agree on merge state, merge SHA, and severity. A missing merge SHA blocks settlement.</p>
+      <p><code>resolve_submission</code> runs one non-deterministic round: fetch the PR and its patch from the public GitHub API, confirm <code>merged</code>, require a merge SHA and a merge time newer than the bounty, then grade severity with an LLM. Validators re-run the same round and must agree on merge state, merge SHA, merge time, and severity. A missing merge SHA or a PR older than the bounty blocks settlement.</p>
       <p class="muted">Rate limits count as transient — validators retry rather than lock bad state.</p>
     </article>
     <article class="how-card">
       <span class="how-num">04</span>
       <h3>Challenge, then paid</h3>
-      <p>Resolution opens a 3-day challenge window. The poster may veto with a recorded reason (bounty reopens); otherwise anyone finalizes: winner paid, remainder refunded, passport stamped. The poster can also finalize early to waive the wait.</p>
-      <p class="muted">Cancel before resolution refunds the full escrow to the poster.</p>
+      <p>Resolution opens a 3-day challenge window. The poster may veto with a recorded reason (bounty reopens for re-resolution — a vetoed bounty can no longer be cancelled or refunded away, it must be re-adjudicated); otherwise anyone finalizes: winner paid, remainder refunded, passport stamped. The poster can also finalize early to waive the wait.</p>
+      <p class="muted">Cancel works only pre-resolution with no pending dispute; every bounty is funded by its own posting transaction with ordered positive tiers.</p>
     </article>
   </section>
 
@@ -85,7 +85,7 @@
       <div><p class="eyebrow">Fund safety</p><h2>Escrow can never get stuck</h2></div>
     </div>
     <div class="flow">
-      <div class="flow-step"><span>open</span><p>Escrow counted in <code>total_escrowed</code> the moment the bounty is sealed.</p></div>
+      <div class="flow-step"><span>open</span><p>Escrow arrives with the posting transaction itself and is counted in <code>total_escrowed</code> the moment the bounty is sealed.</p></div>
       <div class="flow-arrow" aria-hidden="true">→</div>
       <div class="flow-step"><span>paid</span><p>One resolve only: winner paid, remainder refunded, counter decremented.</p></div>
       <div class="flow-arrow" aria-hidden="true">/</div>
@@ -110,7 +110,7 @@
   </section>
 
   <footer class="foot">
-    <p>Hallmark · Future of Work on GenLayer studionet · <code>0xADa53Ae208afC725027eC81d30dd3ba882cca658</code></p>
+    <p>Hallmark · Future of Work on GenLayer studionet · <code>0x4dc39846CD32aB0033120eFa8Ebd19a0902396f6</code></p>
   </footer>
 </main>
 </body>

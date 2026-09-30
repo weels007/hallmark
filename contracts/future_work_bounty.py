@@ -87,6 +87,8 @@ class Bounty:
     evidence_title: str
     challenge_deadline: u256
     open_claims: u256
+    created_at: u256
+    veto_count: u256
 
 
 @allow_storage
@@ -115,6 +117,14 @@ class HunterProfile:
     high_count: u256
     crit_count: u256
     level: str
+
+
+def _epoch_of_iso(ts: str) -> int:
+    s = str(ts or "").strip().replace("Z", "+00:00")
+    try:
+        return int(datetime.fromisoformat(s).timestamp())
+    except Exception:
+        raise gl.vm.UserError(f"{ERROR_EXTERNAL} Bad PR timestamp: {str(ts)[:40]}")
 
 
 def _level_for(completed: int, crits: int) -> str:
@@ -162,19 +172,21 @@ class FutureOfWorkBounty(gl.Contract):
             raise gl.vm.UserError(f"{ERROR_EXPECTED} title required")
         if int(crit_amt) <= 0:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} crit_amt must be > 0")
+        # Tiers must be positive, ordered, and covered by this tx's deposit.
+        if int(low_amt) <= 0 or int(med_amt) <= 0 or int(high_amt) <= 0 or int(crit_amt) <= 0:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} tiers must be positive")
+        if not (int(low_amt) <= int(med_amt) <= int(high_amt) <= int(crit_amt)):
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} tiers must be ordered low<=med<=high<=crit")
         if int(deadline) != 0:
             now = int(datetime.now(timezone.utc).timestamp())
             if int(deadline) <= now:
                 raise gl.vm.UserError(f"{ERROR_EXPECTED} deadline must be in the future")
+        # Each bounty is funded by its own posting transaction (no pre-fund).
         msg_value = gl.message.value
-        if int(msg_value) > 0:
-            if int(msg_value) < int(crit_amt):
-                raise gl.vm.UserError(f"{ERROR_EXPECTED} escrow {int(msg_value)} < crit {int(crit_amt)}")
-            escrow = msg_value
-        else:
-            escrow = crit_amt
-        if int(self.balance) < int(self.total_escrowed) + int(crit_amt):
-            raise gl.vm.UserError(f"{ERROR_EXPECTED} fund contract first via account send (need {int(crit_amt)})")
+        if int(msg_value) < int(crit_amt):
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} post_bounty must fund escrow in this transaction (>= crit {int(crit_amt)})")
+        escrow = msg_value
+        now_post = int(datetime.now(timezone.utc).timestamp())
         self.total_escrowed = u256(int(self.total_escrowed) + int(escrow))
         bid = str(int(self.bounty_count))
         self.bounties[bid] = Bounty(
@@ -196,6 +208,8 @@ class FutureOfWorkBounty(gl.Contract):
             evidence_title="",
             challenge_deadline=u256(0),
             open_claims=u256(0),
+            created_at=u256(now_post),
+            veto_count=u256(0),
         )
         self.bounty_order.append(bid)
         self.bounty_count = u256(int(self.bounty_count) + 1)
@@ -213,6 +227,12 @@ class FutureOfWorkBounty(gl.Contract):
         pr = pr_number.strip().lstrip("#")
         if len(pr) == 0 or not pr.isdigit() or int(pr) <= 0:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} pr_number must be a positive PR number")
+        if int(bounty.deadline) != 0 and int(datetime.now(timezone.utc).timestamp()) > int(bounty.deadline):
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Bounty expired")
+        for i in range(int(self.submission_count)):
+            s = self.submissions[str(i)]
+            if s.bounty_id == bounty_id and s.pr_number == pr and s.status in ("submitted", "pending", "accepted"):
+                raise gl.vm.UserError(f"{ERROR_EXPECTED} Duplicate claim for this PR")
         if gl.message.sender_address == bounty.poster:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} poster cannot hunt own bounty")
         now = int(datetime.now(timezone.utc).timestamp())
@@ -264,8 +284,10 @@ class FutureOfWorkBounty(gl.Contract):
             merged = bool(data.get("merged", False))
             state = str(data.get("state", ""))
             sha = str(data.get("merge_commit_sha", "") or "")
+            merged_at = str(data.get("merged_at", "") or "")
+            pr_created = str(data.get("created_at", "") or "")
             if not merged:
-                return {"merged": False, "state": state, "sha": "", "severity": "", "reasoning": "PR not merged"}
+                return {"merged": False, "state": state, "sha": "", "merged_at": "", "created_at": "", "severity": "", "reasoning": "PR not merged"}
             pr_title = str(data.get("title", ""))[:500]
             pr_body = str(data.get("body", "") or "")[:2000]
             additions = int(data.get("additions", 0))
@@ -304,7 +326,7 @@ class FutureOfWorkBounty(gl.Contract):
             analysis = gl.nondet.exec_prompt(prompt, response_format="json")
             severity = _parse_severity(analysis)
             reasoning = str(analysis.get("reasoning", ""))[:1000]
-            return {"merged": True, "state": state, "sha": sha, "severity": severity, "reasoning": reasoning, "title": pr_title}
+            return {"merged": True, "state": state, "sha": sha, "merged_at": merged_at, "created_at": pr_created, "severity": severity, "reasoning": reasoning, "title": pr_title}
 
         def validator_fn(leaders_res: gl.vm.Result) -> bool:
             if not isinstance(leaders_res, gl.vm.Return):
@@ -324,11 +346,17 @@ class FutureOfWorkBounty(gl.Contract):
             try:
                 leader_sev = str(leaders_res.calldata.get("severity", "")).strip().lower()
                 leader_sha = str(leaders_res.calldata.get("sha", ""))
+                leader_mat = str(leaders_res.calldata.get("merged_at", ""))
+                leader_cat = str(leaders_res.calldata.get("created_at", ""))
             except Exception:
                 return False
             if leader_sev != v.get("severity", ""):
                 return False
             if leader_sha != v.get("sha", "") and v.get("sha", "") != "":
+                return False
+            if leader_mat != v.get("merged_at", ""):
+                return False
+            if leader_cat != v.get("created_at", ""):
                 return False
             return True
 
@@ -364,6 +392,12 @@ class FutureOfWorkBounty(gl.Contract):
         sha = str(pr.get("sha", ""))
         if len(sha) == 0:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} No merge SHA from source, cannot settle")
+        # Payout eligibility: the PR must postdate the bounty it fulfills.
+        merged_at = str(pr.get("merged_at", ""))
+        if len(merged_at) == 0:
+            raise gl.vm.UserError(f"{ERROR_EXTERNAL} GitHub omitted merge time")
+        if _epoch_of_iso(merged_at) <= int(bounty.created_at):
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} PR predates bounty")
 
         now = int(datetime.now(timezone.utc).timestamp())
         sub.status = "pending"
@@ -410,6 +444,7 @@ class FutureOfWorkBounty(gl.Contract):
         bounty.merge_sha = ""
         bounty.evidence_title = ""
         bounty.challenge_deadline = u256(0)
+        bounty.veto_count = u256(int(bounty.veto_count) + 1)
         self.bounties[sub.bounty_id] = bounty
 
     @gl.public.write
@@ -483,6 +518,10 @@ class FutureOfWorkBounty(gl.Contract):
         # keeps a bypass as the bounded unilateral recovery path.
         if int(bounty.open_claims) > 0 and gl.message.sender_address != self.owner:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Resolve pending submissions first")
+        # A vetoed bounty must go through re-adjudication: the poster cannot
+        # silently reclaim escrow via cancel. Owner keeps a bypass as recovery.
+        if int(bounty.veto_count) > 0 and gl.message.sender_address != self.owner:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Disputed bounty must be re-resolved first")
         bounty.status = "cancelled"
         self.bounties[bounty_id] = bounty
         if int(bounty.escrowed) > 0:
@@ -509,6 +548,11 @@ class FutureOfWorkBounty(gl.Contract):
             s = self.submissions[str(i)]
             if s.bounty_id == bounty_id and s.status == "submitted" and now <= int(s.submitted_at) + CLAIM_TTL:
                 raise gl.vm.UserError(f"{ERROR_EXPECTED} Resolve pending submissions first")
+        # A vetoed bounty must be re-adjudicated, not silently refunded.
+        # Recovery: resolve→finalize pays the hunter; owner-cancel is the
+        # bounded unilateral escape.
+        if int(bounty.veto_count) > 0:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Disputed bounty must be re-resolved first")
         bounty.status = "cancelled"
         self.bounties[bounty_id] = bounty
         if int(bounty.escrowed) > 0:
@@ -538,6 +582,8 @@ class FutureOfWorkBounty(gl.Contract):
             "deadline": str(int(b.deadline)), "merge_sha": b.merge_sha, "evidence_title": b.evidence_title,
             "challenge_deadline": str(int(b.challenge_deadline)),
             "open_claims": str(int(b.open_claims)),
+            "created_at": str(int(b.created_at)),
+            "veto_count": str(int(b.veto_count)),
         }
 
     @gl.public.view

@@ -27,7 +27,7 @@
 
 | | |
 |---|---|
-| 💰 Live contract (studionet) | `0xADa53Ae208afC725027eC81d30dd3ba882cca658` |
+| 💰 Live contract (studionet) | `0x4dc39846CD32aB0033120eFa8Ebd19a0902396f6` |
 | 📜 Source | [`contracts/future_work_bounty.py`](./contracts/future_work_bounty.py) |
 | 🖥️ Frontend | [`frontend/`](./frontend) — landing · protocol · bounty workbench (Vite + `genlayer-js`) |
 | 🧪 Adversarial | [`scripts/test-adversarial.ps1`](./scripts/test-adversarial.ps1) — **13/13 PASS** (dana + fixture; default 11 PASS + 2 SKIP) |
@@ -47,12 +47,12 @@ flowchart LR
 
 | # | Method | Siapa | Efek |
 |---|--------|-------|------|
-| 1 | `post_bounty(repo, title, description, low, med, high, crit, deadline)` | poster | Kunci escrow max (`crit`). `deadline` unix detik, `0` = tanpa batas |
-| 2 | `submit_work(bounty_id, pr_number, notes)` | hunter | Tautkan PR GitHub. Poster diblokir self-hunt; `pr_number` harus positif-numerik; URL PR tersimpan |
-| 3 | `resolve_submission(submission_id)` | siapa pun | Satu ronde konsensus (fetch PR + patch, cek `merged` + SHA, LLM tier) → status `pending` |
-| 4 | `challenge_submission(submission_id, reason)` | poster | Veto + alasan tercatat → bounty dibuka lagi |
+| 1 | `post_bounty(repo, title, description, low, med, high, crit, deadline)` | poster | Escrow dari transaksi posting (`msg.value ≥ crit`). Tier positif + terurut. `deadline` unix detik, `0` = tanpa batas |
+| 2 | `submit_work(bounty_id, pr_number, notes)` | hunter | Tautkan PR GitHub. Self-hunt, duplikat, dan klaim pasca-deadline ditolak; `pr_number` positif-numerik |
+| 3 | `resolve_submission(submission_id)` | siapa pun | Konsensus (fetch PR + patch, cek `merged` + SHA + merge lebih baru dari bounty, LLM tier) → `pending`. Validator sepakat atas `merged`, `sha`, `merged_at`, `severity` |
+| 4 | `challenge_submission(submission_id, reason)` | poster | Veto + alasan tercatat → bounty dibuka lagi dan **wajib diadili ulang** (cancel/refund diblokir pasca-veto) |
 | 5 | `finalize_submission(submission_id)` | poster kapan pun, pihak lain pasca-jendela | Bayar hunter, refund sisa, bounty `paid`, passport naik tingkat |
-| 6 | `cancel_bounty` · `refund_expired` · `sweep` | poster/owner · siapa pun · owner | Escape anti-locked; sweep hanya saldo di luar escrow |
+| 6 | `cancel_bounty` · `refund_expired` · `sweep` | poster/owner · siapa pun · owner | Escape: tanpa klaim fresh (cancel) / tanpa klaim fresh + lewat deadline (refund); sweep hanya saldo bebas |
 
 Tier default (wei): `low=10` · `medium=50` · `high=150` · `critical=500`
 
@@ -68,7 +68,8 @@ Studionet, 20 Sep 2026, wallet `cpe-deploy`/`cpe-v2`:
 
 - 💸 Fund 2500 wei → post (genlayer-js) → submit PR #218 (merged, SHA `8c899cc…`) → resolve `MAJORITY_AGREE` 3/3: `medium`, payout 50 → finalize poster → **`paid`**, passport `contributor`/earned 50.
 - 🧪 Adversarial 13/13: past-deadline · 6× unknown-record write · sweep-guard · list-empty · 2× view-guard · funded-post · unmerged-resolve (`[EXPECTED] PR not merged yet`, fixture PR open #11245).
-- 🔧 Root-cause tertutup via explorer: SDK string-args crash (`to_bytes`) → koersi `u256` di kontrak; terbukti via jalur payable (post string + `value` 500, tanpa pre-fund) → submit PR #218 → resolve `medium`.
+- 🧪 Settlement suite 9/9 (`frontend/test-settlement.mjs`): payable funding, tier ordered/positive/underfunded, duplicate-claim, post-deadline-claim, PR-postdates (konsensus + sepakat `merged_at`), unmerged-resolve.
+- 🔧 Root-cause tertutup via explorer: SDK string-args crash (`to_bytes`) → koersi `u256`; address string crash → koersi `Address`; transfer pre-fund flaky → jalur payable yang terbukti bekerja.
 - 🔍 Batch-2 manual: double-finalize · challenge-accepted · cancel-paid · submit-paid · refund-tanpa-deadline · cancel non-poster · self-hunt · bad-repo · owner-cancel + refund — semua menolak/berhasil sesuai desain.
 
 <details>
@@ -76,7 +77,7 @@ Studionet, 20 Sep 2026, wallet `cpe-deploy`/`cpe-v2`:
 
 | Alamat | Status |
 |--------|--------|
-| `0xADa5…ca658` | ✅ aktif — view-guard + pr-hardening |
+| `0x4dc3…396f6` | ✅ aktif — steward settlement build (payable, ordered tiers, no-duplikat, PR-postdates, veto-blocks-reclaim) |
 | `0x3cA0…A4cA` | arsip — view-guard, 13/13 + E2E medium/50 |
 | `0x78b6…5c3Cd` | arsip — happy-path + sengketa 14 Sep 2026 |
 | `0xda8F…4C5A5D` dkk | arsip eksperimen awal |
