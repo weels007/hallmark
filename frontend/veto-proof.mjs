@@ -1,20 +1,19 @@
 // Veto-block proof runner (steward settlement, final mile).
-// Needs a genlayer-js PR merged AFTER bid 6 created_at (1790747157).
-// Usage: node frontend/veto-proof.mjs <fresh-merged-pr-number>
-// Poster key: %TEMP%/hallmark_veto_poster.key (created by probe-standby.mjs).
+// The PR must be merged AFTER the bounty's created_at (postdates rule).
+// Usage: node frontend/veto-proof.mjs <bid> <fresh-merged-pr-number>
+// Poster key: %TEMP%/hallmark_veto_poster_<bid>.key (created by standby-post.mjs).
 import { createClient, createAccount } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import fs from "fs";
 
-const PR = process.argv[2];
-if (!/^[1-9][0-9]*$/.test(PR || "")) {
-  console.error("Usage: node frontend/veto-proof.mjs <fresh-merged-pr-number>");
+const [BID, PR] = process.argv.slice(2);
+if (!/^\d+$/.test(BID || "") || !/^[1-9][0-9]*$/.test(PR || "")) {
+  console.error("Usage: node frontend/veto-proof.mjs <bid> <fresh-merged-pr-number>");
   process.exit(2);
 }
 
 const C = "0x4dc39846CD32aB0033120eFa8Ebd19a0902396f6";
-const BID = "6";
-const KEYFILE = process.env.TEMP + "/hallmark_veto_poster.key";
+const KEYFILE = `${process.env.TEMP}/hallmark_veto_poster_${BID}.key`;
 const c = createClient({ chain: studionet });
 const poster = createAccount(fs.readFileSync(KEYFILE, "utf8").trim());
 const hunter = createAccount();

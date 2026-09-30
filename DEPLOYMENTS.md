@@ -60,7 +60,7 @@
 - Adversarial ps1: 12 PASS + 1 SKIP (unmerged via mjs; CLI didokumentasikan butuh payable).
 - Deadline guards + veto mechanics + E2E paid: kode identik, terbukti live di arsip (T1/T2 di 0x7096; 13/13 + paid 50 di 0x3cA0).
 - Batasan bukti (jujur): `challenge→cancel-block` dan `veto→refund-block` belum dieksekusi live — butuh submission pending (= butuh PR fresh-merged, tanpa fixture saat ini). Guard 3 baris mengikuti pola terbukti; verifikasi ulang saat fixture tersedia.
-- STANDING BY di kontrak ini: bid 5 (open, tanpa key) + bid 6 `Veto-standby` (open, poster key di `%TEMP%/hallmark_veto_poster.key`, created_at `1790747157`). Begitu ada PR genlayer-js merged dengan `merged_at` lebih baru: `node frontend/veto-proof.mjs <nomor-PR>` — submit → resolve → veto → cancel-ditolak (`must be re-resolved`) → resubmit → resolve → finalize → paid. Runner + key sudah siap.
+- STANDING BY di kontrak ini: bid 7 `Veto-standby studio` (open, `genlayerlabs/genlayer-studio`, created_at `1790747730`, poster key `%TEMP%/hallmark_veto_poster_7.key`). Begitu ada PR studio merged dengan `merged_at` lebih baru: `node frontend/veto-proof.mjs 7 <nomor-PR>` — submit → resolve → veto → cancel-ditolak (`must be re-resolved`) → resubmit → resolve → finalize → paid. (Bid 5/6 genlayer-js: tanpa merge baru; key bid 6 di `hallmark_veto_poster.key`.)
 - Arsip: 0xADa5 (E2E hijau penuh SDK-only: paid 50 + passport), 0x7096 (T1/T2 valid; owner jatuh ke asing), 0xFB1a (Address-coercion), 0x595B (u256-fix), 0x3cA0 (13/13 + paid 50), 0x78b6 (14 Sep).
 
 ## Hasil test sebelumnya
